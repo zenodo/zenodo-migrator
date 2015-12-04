@@ -60,7 +60,12 @@ setup_requires = [
 ]
 
 install_requires = [
+    'celery>=3.1.18',
     'click>=5.0.0',
+    'Flask-CeleryExt>=0.1.0',
+    'Flask-CLI>=0.2.1',
+    'invenio-pidstore>=1.0.0a2',
+    'invenio-records>=1.0.0a7',
 ]
 
 packages = find_packages()
@@ -110,7 +115,7 @@ setup(
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,
-    keywords='invenio TODO',
+    keywords='zenodo migration',
     license='GPLv2',
     author='CERN',
     author_email='info@zenodo.org',
@@ -119,7 +124,14 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    entry_points={},
+    entry_points={
+        'invenio_base.apps': [
+            'zenodo_migrationkit = zenodo_migrationkit:MigrationKit'
+        ],
+        'invenio_celery.tasks': [
+            'zenodo_migrationkit = zenodo_migrationkit.tasks'
+        ],
+    },
     extras_require=extras_require,
     install_requires=install_requires,
     setup_requires=setup_requires,

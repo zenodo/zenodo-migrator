@@ -26,9 +26,33 @@
 
 from __future__ import absolute_import, print_function
 
+import json
+import sys
+
 import click
+from celery import chain, group
+from flask_cli import with_appcontext
+from invenio_pidstore.models import PIDStatus
+from invenio_records.tasks.api import create_record
+
+from .tasks import create_pid
 
 
-@click.command()
+@click.group()
 def migration():
     """Command related to migrating Zenodo data."""
+
+
+@migration.command()
+@click.argument('source', type=click.File('r'), default=sys.stdin)
+@with_appcontext
+def loaddump(source):
+    """Load a JSON dump for Zenodo."""
+    click.echo("Loading dump...")
+    data = json.load(source)
+
+    click.echo("Sending tasks...")
+    job = group([chain(create_record.s(data=item),
+                 create_pid.s(item['recid'], PIDStatus.REGISTERED))
+                for item in data])
+    job.delay()

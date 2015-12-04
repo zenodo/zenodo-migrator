@@ -29,7 +29,7 @@ from __future__ import absolute_import, print_function
 from .cli import migration
 
 
-class ZenodoMigrationKit(object):
+class MigrationKit(object):
     """Zenodo-MigrationKit extension."""
 
     def __init__(self, app=None):
