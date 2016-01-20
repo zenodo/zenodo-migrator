@@ -23,22 +23,56 @@ from __future__ import absolute_import
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from invenio_pidstore.models import PersistentIdentifier, RecordIdentifier
+from invenio_db import db
+# from invenio_files_rest.models import Bucket
+from invenio_indexer.api import RecordIndexer
+from invenio_pidstore.models import PersistentIdentifier, PIDStatus, \
+    RecordIdentifier
+from invenio_records.api import Record
 
 logger = get_task_logger(__name__)
 
 
-@shared_task
-def create_pid(rec_uuid, recid, status):
-    """Create persistent identifier for a given record."""
-    from invenio_db import db
-    # Reserver record identifier.
-    RecordIdentifier.insert(recid)
-    # Create persistent identifier.
-    PersistentIdentifier.create(
-        pid_type='recid',
-        pid_value=str(recid),
-        object_type='rec',
-        object_uuid=rec_uuid,
-        status=status)
-    db.session.commit()
+@shared_task(ignore_result=True)
+def create_record(data=None, id_=None, force=False):
+    """Create record from given data."""
+    try:
+        # Create a bucket files in this record.
+        # bucket = Bucket.create(
+        #     storage_class=current_app.config[
+        #         'FILES_REST_DEFAULT_STORAGE_CLASS'],
+        #     location_name='cern')
+
+        # Set access restrictions on bucket from record from access right in
+        # record.
+
+        # Save bucket id in record.
+        if '_system' not in data:
+            data['_system'] = {}
+
+        # data['_system']['bucket'] = str(bucket.id)
+
+        # Create record.
+        rec_uuid = str(Record.create(data, id_=id_).id)
+
+        # Reserve record identifier.
+        recid = data['recid']
+        RecordIdentifier.insert(recid)
+
+        # Create persistent identifier.
+        PersistentIdentifier.create(
+            pid_type='recid',
+            pid_value=str(recid),
+            object_type='rec',
+            object_uuid=rec_uuid,
+            status=PIDStatus.REGISTERED)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    # Request record indexing
+    RecordIndexer().bulk_index([rec_uuid])
+
+    # Send task to migrate files.
+    return rec_uuid

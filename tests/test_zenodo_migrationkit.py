@@ -27,9 +27,13 @@
 
 from __future__ import absolute_import, print_function
 
+from os.path import dirname, join
+
 from click.testing import CliRunner
 from flask import Flask
-from flask_cli import FlaskCLI, ScriptInfo
+from flask_cli import FlaskCLI
+from invenio_pidstore.resolver import Resolver
+from invenio_records.api import Record
 
 from zenodo_migrationkit import MigrationKit
 from zenodo_migrationkit.cli import migration
@@ -56,13 +60,23 @@ def test_init():
     assert 'zenodo-migrationkit' in app.extensions
 
 
-def test_command():
+def test_cli_group(script_info):
     """Test migration command."""
-    app = Flask('testapp')
-    FlaskCLI(app)
-
-    script_info = ScriptInfo(create_app=lambda info: app)
-
     runner = CliRunner()
     result = runner.invoke(migration, obj=script_info)
     assert result.exit_code == 0
+
+
+def test_loaddump(script_info, db, queue):
+    """Test migration command."""
+    runner = CliRunner()
+    result = runner.invoke(
+        migration, ['loaddump', join(dirname(__file__), 'dump.json')],
+        obj=script_info)
+    assert result.exit_code == 0
+
+    # Assert that records were created.
+    resolver = Resolver(
+        pid_type='recid', object_type='rec', getter=Record.get_record)
+    assert resolver.resolve('1')[1]['recid'] == 1
+    assert resolver.resolve('2')[1]['recid'] == 2

@@ -55,15 +55,14 @@ extras_require['all'] = []
 for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
-setup_requires = [
-    'Babel>=1.3',
-]
-
 install_requires = [
-    'celery>=3.1.18',
+    'celery>=3.1.19',
     'click>=5.0.0',
     'Flask-CeleryExt>=0.1.0',
     'Flask-CLI>=0.2.1',
+    # 'invenio-files-rest>=1.0.0.dev20150000',
+    'invenio-db>=1.0.0a9',
+    'invenio-indexer>=1.0.0a1',
     'invenio-pidstore>=1.0.0a2',
     'invenio-records>=1.0.0a7',
 ]
@@ -134,7 +133,6 @@ setup(
     },
     extras_require=extras_require,
     install_requires=install_requires,
-    setup_requires=setup_requires,
     tests_require=tests_require,
     classifiers=[
         'Environment :: Web Environment',

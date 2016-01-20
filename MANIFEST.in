@@ -22,32 +22,21 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-# TODO: Generate this manifest file by running the following commands:
-#
-#  git init
-#  git add -A
-#  pip install -e .[all]
-#  check-manifest -u
-
-# Check manifest will not automatically add these two files:
-include .dockerignore
-include .editorconfig
-include .tx/config
-recursive-include zenodo_migrationkit *.po
-recursive-include zenodo_migrationkit *.mo
-
-# added by check_manifest.py
 include *.rst
 include *.sh
 include *.txt
+include .dockerignore
+include .editorconfig
+include .tx/config
 include LICENSE
-include babel.ini
 include pytest.ini
 recursive-include docs *.bat
 recursive-include docs *.py
 recursive-include docs *.rst
 recursive-include docs Makefile
 recursive-include examples *.py
+recursive-include tests *.json
 recursive-include tests *.py
 recursive-include zenodo_migrationkit *.html
+recursive-include zenodo_migrationkit *.mo
+recursive-include zenodo_migrationkit *.po
