@@ -40,3 +40,4 @@ recursive-include tests *.py
 recursive-include zenodo_migrationkit *.html
 recursive-include zenodo_migrationkit *.mo
 recursive-include zenodo_migrationkit *.po
+recursive-include scripts *.py

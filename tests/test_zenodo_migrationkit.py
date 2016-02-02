@@ -27,16 +27,22 @@
 
 from __future__ import absolute_import, print_function
 
+import uuid
 from os.path import dirname, join
 
 from click.testing import CliRunner
 from flask import Flask
 from flask_cli import FlaskCLI
+from invenio_indexer.api import RecordIndexer
+from invenio_pidstore.models import PersistentIdentifier
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
+from invenio_records.models import RecordMetadata
+from mock import patch
 
 from zenodo_migrationkit import MigrationKit
 from zenodo_migrationkit.cli import migration
+from zenodo_migrationkit.tasks import create_record
 
 
 def test_version():
@@ -80,3 +86,31 @@ def test_loaddump(script_info, db, queue):
         pid_type='recid', object_type='rec', getter=Record.get_record)
     assert resolver.resolve('1')[1]['recid'] == 1
     assert resolver.resolve('2')[1]['recid'] == 2
+
+
+def test_reindex(script_info, db, queue):
+    """Test reindex command."""
+    test_uuid = uuid.uuid4()
+    test_record = dict(
+        title='Test Record',
+        recid=1,
+    )
+    create_record(data=test_record, id_=test_uuid)
+
+    def mock_bulk(client, actions, **kwargs):
+        assert len(list(actions)) == 1
+        return (1, 0)
+
+    # create_record also indexes the record.
+    with patch('invenio_indexer.api.bulk', mock_bulk):
+        assert RecordIndexer().process_bulk_queue()[0] == 1
+
+    runner = CliRunner()
+    result = runner.invoke(
+        migration, ['reindex', 'recid'],
+        obj=script_info)
+    assert result.exit_code == 0
+
+    # create_record also indexes the record.
+    with patch('invenio_indexer.api.bulk', mock_bulk):
+        assert RecordIndexer().process_bulk_queue()[0] == 1
