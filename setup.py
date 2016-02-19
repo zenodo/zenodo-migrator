@@ -66,6 +66,7 @@ install_requires = [
     'invenio-indexer>=1.0.0a1',
     'invenio-pidstore>=1.0.0a2',
     'invenio-records>=1.0.0a7',
+    'python-dateutil>=2.4.2',
 ]
 
 packages = find_packages()

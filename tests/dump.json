@@ -1,4 +1,14 @@
 [
-{"title": "Record 1", "recid": 1},
-{"title": "Record 2", "recid": 2}
+  {
+    "title": "Record 1",
+    "recid": 1,
+    "creation_date": "20151201123456",
+    "modification_date": "20151201214356"
+  },
+  {
+    "title": "Record 2",
+    "recid": 2,
+    "creation_date": "20151201123456",
+    "modification_date": "20151201214356"
+  }
 ]

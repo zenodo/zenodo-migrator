@@ -50,7 +50,7 @@ def migration():
 @migration.command()
 @click.argument('source', type=click.File('r'), default=sys.stdin)
 @with_appcontext
-def loaddump(source):
+def loadrecords(source):
     """Load a JSON dump for Zenodo."""
     # loc = Location(name='cern', uri='file:///tmp/')
     # db.session.add(loc)
@@ -62,6 +62,27 @@ def loaddump(source):
     click.echo("Sending tasks...")
     job = group([create_record.s(data=item) for item in data])
     job.delay()
+
+
+@migration.command()
+@click.argument('source', type=click.File('r'), default=sys.stdin)
+@with_appcontext
+def inspectrecords(source):
+    """Load a JSON dump for Zenodo."""
+    # loc = Location(name='cern', uri='file:///tmp/')
+    # db.session.add(loc)
+    # db.session.commit()
+
+    click.echo("Loading dump...")
+    data = json.load(source)
+
+    click.echo("Analyszing keys...")
+    keys = set()
+    for d in data:
+        keys.update(d.keys())
+
+    for k in sorted(list(keys)):
+        print(k)
 
 
 @migration.command()

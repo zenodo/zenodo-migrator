@@ -43,6 +43,8 @@ def test_create_record(app, db):
     test_record = dict(
         title='Test Record',
         recid=1,
+        creation_date='20151201123456',
+        modification_date='20151201123456',
     )
 
     create_record(data=test_record, id_=test_uuid)
@@ -52,7 +54,8 @@ def test_create_record(app, db):
     pid, record = resolver.resolve('1')
 
     assert record['recid'] == 1
-    assert '_system' in record
+    assert 'creation_date' not in record
+    assert 'modification_date' not in record
 
 
 def test_create_record_fail(app, db):

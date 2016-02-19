@@ -25,12 +25,21 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from invenio_db import db
 # from invenio_files_rest.models import Bucket
-from invenio_indexer.api import RecordIndexer
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus, \
     RecordIdentifier
 from invenio_records.api import Record
 
+from .transform import transform_record
+
 logger = get_task_logger(__name__)
+
+
+def pid_status(data):
+    """Extract PID status."""
+    if 'collections'in data:
+        return PIDStatus.DELETED
+    else:
+        return PIDStatus.REGISTERED
 
 
 @shared_task(ignore_result=True)
@@ -47,32 +56,39 @@ def create_record(data=None, id_=None, force=False):
         # record.
 
         # Save bucket id in record.
-        if '_system' not in data:
-            data['_system'] = {}
+        # if '_system' not in data:
+        #     data['_system'] = {}
 
         # data['_system']['bucket'] = str(bucket.id)
 
         # Create record.
-        rec_uuid = str(Record.create(data, id_=id_).id)
+        record = Record.create(data, id_=id_)
 
         # Reserve record identifier.
         recid = data['recid']
         RecordIdentifier.insert(recid)
 
         # Create persistent identifier.
-        PersistentIdentifier.create(
+        pid = PersistentIdentifier.create(
             pid_type='recid',
             pid_value=str(recid),
             object_type='rec',
-            object_uuid=rec_uuid,
+            object_uuid=str(record.id),
             status=PIDStatus.REGISTERED)
         db.session.commit()
+
+        # Soft-delete record if PID is deleted.
+        if pid_status(data) == PIDStatus.DELETED:
+            record.delete()
+            pid.delete()
+            db.session.commit()
+        else:
+            transform_record(record)
+            record.commit()
+            db.session.commit()
     except Exception:
         db.session.rollback()
         raise
 
-    # Request record indexing
-    RecordIndexer().bulk_index([rec_uuid])
-
     # Send task to migrate files.
-    return rec_uuid
+    return str(record.id)
