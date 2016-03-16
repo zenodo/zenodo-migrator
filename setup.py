@@ -61,11 +61,11 @@ install_requires = [
     'click>=5.0.0',
     'Flask-CeleryExt>=0.1.0',
     'Flask-CLI>=0.2.1',
-    # 'invenio-files-rest>=1.0.0.dev20150000',
     'invenio-db>=1.0.0a9',
     'invenio-indexer>=1.0.0a1',
     'invenio-pidstore>=1.0.0a2',
     'invenio-records>=1.0.0a7',
+    'lxml>=3.4.4',
     'python-dateutil>=2.4.2',
 ]
 

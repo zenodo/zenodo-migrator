@@ -34,10 +34,8 @@ from click.testing import CliRunner
 from flask import Flask
 from flask_cli import FlaskCLI
 from invenio_indexer.api import RecordIndexer
-from invenio_pidstore.models import PersistentIdentifier
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
-from invenio_records.models import RecordMetadata
 from mock import patch
 
 from zenodo_migrationkit import MigrationKit
@@ -102,10 +100,6 @@ def test_reindex(script_info, db, queue):
     def mock_bulk(client, actions, **kwargs):
         assert len(list(actions)) == 1
         return (1, 0)
-
-    # create_record also indexes the record.
-    # with patch('invenio_indexer.api.bulk', mock_bulk):
-    #     assert RecordIndexer().process_bulk_queue()[0] == 1
 
     runner = CliRunner()
     result = runner.invoke(
