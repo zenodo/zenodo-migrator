@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015, 2016 CERN.
 #
 # Invenio is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -24,71 +24,36 @@ from __future__ import absolute_import
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from invenio_db import db
-# from invenio_files_rest.models import Bucket
-from invenio_pidstore.models import PersistentIdentifier, PIDStatus, \
-    RecordIdentifier
+from invenio_files_rest.models import FileInstance
 from invenio_records.api import Record
+from sqlalchemy.orm.exc import NoResultFound
 
 from .transform import transform_record
 
 logger = get_task_logger(__name__)
 
 
-def pid_status(data):
-    """Extract PID status."""
-    if 'collections'in data:
-        return PIDStatus.DELETED
-    else:
-        return PIDStatus.REGISTERED
+@shared_task(ignore_result=True)
+def migrate_record(record_uuid):
+    """Create record from given data."""
+    # Migrate record.
+    try:
+        record = transform_record(Record.get_record(record_uuid))
+        record.commit()
+        db.session.commit()
+        # TODO: Migrate provisional communities to inclusion requests.
+    except NoResultFound:
+        logger.info("Deleted record - no migration required.")
+    except Exception as e:
+        db.session.rollback()
+        logger.error("Transformation failed " + str(type(e)) + str(e))
 
 
 @shared_task(ignore_result=True)
-def create_record(data=None, id_=None, force=False):
-    """Create record from given data."""
-    try:
-        # Create a bucket files in this record.
-        # bucket = Bucket.create(
-        #     storage_class=current_app.config[
-        #         'FILES_REST_DEFAULT_STORAGE_CLASS'],
-        #     location_name='cern')
-
-        # Set access restrictions on bucket from record from access right in
-        # record.
-
-        # Save bucket id in record.
-        # if '_system' not in data:
-        #     data['_system'] = {}
-
-        # data['_system']['bucket'] = str(bucket.id)
-
-        # Create record.
-        record = Record.create(data, id_=id_)
-
-        # Reserve record identifier.
-        recid = data['recid']
-        RecordIdentifier.insert(recid)
-
-        # Create persistent identifier.
-        pid = PersistentIdentifier.create(
-            pid_type='recid',
-            pid_value=str(recid),
-            object_type='rec',
-            object_uuid=str(record.id),
-            status=PIDStatus.REGISTERED)
-        db.session.commit()
-
-        # Soft-delete record if PID is deleted.
-        if pid_status(data) == PIDStatus.DELETED:
-            record.delete()
-            pid.delete()
-            db.session.commit()
-        else:
-            transform_record(record)
-            record.commit()
-            db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    # Send task to migrate files.
-    return str(record.id)
+def migrate_files():
+    """Migrate location of all files."""
+    q = FileInstance.query.filter(FileInstance.uri.like('/opt/zenodo/%'))
+    for f in q.all():
+        f.uri = '/afs/cern.ch/project/zenodo/prod/{0}'.format(
+            f.uri[len('/opt/zenodo/'):])
+    db.session.commit()

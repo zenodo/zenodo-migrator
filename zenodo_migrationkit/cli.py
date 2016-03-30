@@ -30,14 +30,13 @@ import json
 import sys
 
 import click
-from celery import group
 from flask_cli import with_appcontext
 from invenio_indexer.api import RecordIndexer
 from invenio_pidstore.models import PersistentIdentifier
 from lxml import etree
 from six import StringIO
 
-from .tasks import create_record
+from .tasks import migrate_files
 
 
 @click.group()
@@ -46,41 +45,10 @@ def migration():
 
 
 @migration.command()
-@click.argument('source', type=click.File('r'), default=sys.stdin)
 @with_appcontext
-def loadrecords(source):
-    """Load a JSON dump for Zenodo."""
-    # loc = Location(name='cern', uri='file:///tmp/')
-    # db.session.add(loc)
-    # db.session.commit()
-
-    click.echo("Loading dump...")
-    data = json.load(source)
-
-    click.echo("Sending tasks...")
-    job = group([create_record.s(data=item) for item in data])
-    job.delay()
-
-
-@migration.command()
-@click.argument('source', type=click.File('r'), default=sys.stdin)
-@with_appcontext
-def inspectrecords(source):
-    """Load a JSON dump for Zenodo."""
-    # loc = Location(name='cern', uri='file:///tmp/')
-    # db.session.add(loc)
-    # db.session.commit()
-
-    click.echo("Loading dump...")
-    data = json.load(source)
-
-    click.echo("Analyszing keys...")
-    keys = set()
-    for d in data:
-        keys.update(d.keys())
-
-    for k in sorted(list(keys)):
-        print(k)
+def files():
+    """Migrate records for Zenodo."""
+    migrate_files.delay()
 
 
 @migration.command()

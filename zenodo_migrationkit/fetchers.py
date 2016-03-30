@@ -22,27 +22,19 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Module for migration of Zenodo data to Invenio 3."""
+"""Persistent identifier fetcher."""
 
 from __future__ import absolute_import, print_function
 
-from .cli import migration
+from invenio_oaiserver.provider import OAIIDProvider
+from invenio_pidstore.fetchers import FetchedPID
 
 
-class MigrationKit(object):
-    """Zenodo-MigrationKit extension."""
-
-    def __init__(self, app=None):
-        """Extension initialization."""
-        if app:
-            self.init_app(app)
-
-    def init_app(self, app):
-        """Flask application initialization."""
-        app.cli.add_command(migration)
-        app.config['MIGRATOR_RECORDS_DUMP_CLS'] = \
-            'zenodo_migrationkit.records.ZenodoRecordDump'
-        app.config['MIGRATOR_RECORDS_PID_FETCHERS'] = [
-            'zenodo_migrationkit.fetchers.legacy_oaiid'
-        ]
-        app.extensions['zenodo-migrationkit'] = self
+def legacy_oaiid(record_uuid, data):
+    """Fetch a record's identifiers."""
+    oaiid = data.get('oai', {}).get('oai')
+    return FetchedPID(
+        provider=OAIIDProvider,
+        pid_type='oai',
+        pid_value=oaiid,
+    ) if oaiid else None

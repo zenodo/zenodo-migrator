@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Zenodo.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2016 CERN.
 #
 # Zenodo is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License as
@@ -22,27 +22,17 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Module for migration of Zenodo data to Invenio 3."""
+"""Record loader."""
 
 from __future__ import absolute_import, print_function
 
-from .cli import migration
+from invenio_migrator.records import RecordDump
 
 
-class MigrationKit(object):
-    """Zenodo-MigrationKit extension."""
+class ZenodoRecordDump(RecordDump):
+    """Zenodo record dump class."""
 
-    def __init__(self, app=None):
-        """Extension initialization."""
-        if app:
-            self.init_app(app)
-
-    def init_app(self, app):
-        """Flask application initialization."""
-        app.cli.add_command(migration)
-        app.config['MIGRATOR_RECORDS_DUMP_CLS'] = \
-            'zenodo_migrationkit.records.ZenodoRecordDump'
-        app.config['MIGRATOR_RECORDS_PID_FETCHERS'] = [
-            'zenodo_migrationkit.fetchers.legacy_oaiid'
-        ]
-        app.extensions['zenodo-migrationkit'] = self
+    def is_deleted(self, record=None):
+        """Change behavior of when a record is considered deleted."""
+        record = record or self.revisions[-1][1]
+        return 'collections'in record
