@@ -123,13 +123,9 @@ def _migrate_grants(record):
         return record
 
     def mapper(x):
-        gid = 'http://zenodo.org/grants/10.13039/501100004963/{0}'.format(
+        gid = 'http://dx.zenodo.org/grants/10.13039/501100000780::{0}'.format(
             x['identifier'])
-        return {
-            'funder': {
-                '$ref': 'http://dx.doi.org/10.13039/501100004963'},
-            'grant': {'$ref': gid}
-        }
+        return {'$ref': gid}
     record['grants'] = [mapper(x) for x in record['grants']]
     return record
 
