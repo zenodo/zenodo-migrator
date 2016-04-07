@@ -34,6 +34,7 @@ cache:
   - pip
 
 env:
+  # Temporarily disable until release of Invenio-Communities
   - REQUIREMENTS=lowest
   - REQUIREMENTS=release
   - REQUIREMENTS=devel

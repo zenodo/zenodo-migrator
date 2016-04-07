@@ -63,11 +63,12 @@ install_requires = [
     'Flask-CLI>=0.2.1',
     'invenio-db>=1.0.0a9',
     'invenio-files-rest>=1.0.0a1',
-    'invenio-indexer>=1.0.0a1',
+    'invenio-indexer>=1.0.0a2',
     'invenio-oaiserver>=1.0.0a1',
     'invenio-pidstore>=1.0.0a7',
     'invenio-records>=1.0.0a9',
     'invenio-search>=1.0.0a4',
+    'invenio-communities>=1.0.0a1',
     'lxml>=3.4.4',
     'python-dateutil>=2.4.2',
 ]

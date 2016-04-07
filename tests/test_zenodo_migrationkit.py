@@ -27,16 +27,9 @@
 
 from __future__ import absolute_import, print_function
 
-import uuid
-from os.path import dirname, join
-
 from click.testing import CliRunner
 from flask import Flask
 from flask_cli import FlaskCLI
-from invenio_indexer.api import RecordIndexer
-from invenio_pidstore.resolver import Resolver
-from invenio_records.api import Record
-from mock import patch
 
 from zenodo_migrationkit import MigrationKit
 from zenodo_migrationkit.cli import migration

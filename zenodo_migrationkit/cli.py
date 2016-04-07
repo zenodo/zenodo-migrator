@@ -28,15 +28,20 @@ from __future__ import absolute_import, print_function
 
 import json
 import sys
+import traceback
 
 import click
 from flask_cli import with_appcontext
 from invenio_indexer.api import RecordIndexer
 from invenio_pidstore.models import PersistentIdentifier
+from invenio_pidstore.resolver import Resolver
+from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
-from .tasks import migrate_files
+from .tasks import migrate_files, migrate_record
+from .transform import migrate_record as migrate_record_func
+from .transform import transform_record
 
 
 @click.group()
@@ -47,8 +52,61 @@ def migration():
 @migration.command()
 @with_appcontext
 def files():
-    """Migrate records for Zenodo."""
+    """Migrate files for Zenodo."""
     migrate_files.delay()
+
+
+def get_record_uuids(recid):
+    """Get list of record uuids to process."""
+    if recid is None:
+        uuids = [str(x[0]) for x in PersistentIdentifier.query.filter_by(
+                pid_type='recid', object_type='rec', status='R'
+            ).values(
+                PersistentIdentifier.object_uuid
+            )]
+    else:
+        resolver = Resolver(
+            pid_type='recid', object_type='rec', getter=Record.get_record)
+        pid, record = resolver.resolve(recid)
+        uuids = [str(record.id)]
+    return uuids
+
+
+@migration.command()
+@click.option('--recid', '-r')
+@click.option('--with-traceback', '-t', is_flag=True, default=False)
+@with_appcontext
+def recordstest(recid=None, with_traceback=False):
+    """Test records data migration."""
+    for uid in get_record_uuids(recid):
+        record = Record.get_record(uid)
+        try:
+            record = transform_record(record)
+            record.validate()
+            # click.secho(
+            #     'Success: {0}'.format(record.get('recid', uid)), fg='green')
+        except Exception:
+            click.secho(
+                'Failure {0}'.format(record.get('recid', uid)), fg='red')
+            if with_traceback:
+                traceback.print_exc()
+
+
+@migration.command()
+@click.option('--no-delay', '-n', is_flag=True, default=False)
+@click.option('--recid', '-r')
+@with_appcontext
+def recordsrun(no_delay=False, recid=None):
+    """Run records data migration."""
+    if not no_delay:
+        click.echo('Sending migration background tasks..')
+
+    with click.progressbar(get_record_uuids(recid)) as records_bar:
+        for record_uuid in records_bar:
+            if no_delay:
+                migrate_record_func(record_uuid)
+            else:
+                migrate_record.delay(record_uuid)
 
 
 @migration.command()

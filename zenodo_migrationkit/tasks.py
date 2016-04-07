@@ -25,10 +25,8 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
-from invenio_records.api import Record
-from sqlalchemy.orm.exc import NoResultFound
 
-from .transform import transform_record
+from .transform import migrate_record as migrate_record_func
 
 logger = get_task_logger(__name__)
 
@@ -37,16 +35,7 @@ logger = get_task_logger(__name__)
 def migrate_record(record_uuid):
     """Create record from given data."""
     # Migrate record.
-    try:
-        record = transform_record(Record.get_record(record_uuid))
-        record.commit()
-        db.session.commit()
-        # TODO: Migrate provisional communities to inclusion requests.
-    except NoResultFound:
-        logger.info("Deleted record - no migration required.")
-    except Exception as e:
-        db.session.rollback()
-        logger.error("Transformation failed " + str(type(e)) + str(e))
+    migrate_record_func(record_uuid, logger=logger)
 
 
 @shared_task(ignore_result=True)
