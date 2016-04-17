@@ -57,7 +57,7 @@ def migrate_record(record_uuid, logger=None):
                 try:
                     c = Community.get(c_id)
                     if c:
-                        InclusionRequest.create(c, record)
+                        InclusionRequest.create(c, record, notify=False)
                     else:
                         if logger:
                             logger.warning(
