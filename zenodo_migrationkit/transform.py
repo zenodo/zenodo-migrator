@@ -170,9 +170,6 @@ def _migrate_meetings(record):
         record['meetings']['url'] = record['conference_url']
         del record['conference_url']
 
-    if 'meetings' in record:
-        record['meetings'] = [record['meetings']]
-
     return record
 
 
@@ -273,7 +270,7 @@ def _migrate_provisional_communities(record):
     if comms:
         if 'communities' in record:
             record['provisional_communities'] = list(
-                set(comms)-set(record['communities']))
+                set(comms) - set(record['communities']))
         else:
             record['provisional_communities'] = list(set(comms))
     else:
