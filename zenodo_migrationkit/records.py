@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import, print_function
 
+import arrow
 from invenio_migrator.records import RecordDump
 
 
@@ -36,3 +37,24 @@ class ZenodoRecordDump(RecordDump):
         """Change behavior of when a record is considered deleted."""
         record = record or self.revisions[-1][1]
         return 'collections'in record
+
+    def _prepare_revision(self, data):
+        """Prepare a single record revision."""
+        # Just store the MARCXML as-is.
+        dt = arrow.get(data['modification_datetime']).datetime
+        return (dt, dict(marcxml=data['marcxml']))
+
+    def prepare_revisions(self):
+        """Prepare data."""
+        # Prepare revisions
+        self.revisions = []
+
+        it = [self.data['record'][0]] if self.latest_only \
+            else self.data['record']
+
+        # Add all previous revisions with their MARCXML.
+        for i in it:
+            self.revisions.append(self._prepare_revision(i))
+
+        # Add last revision as JSON.
+        self.revisions.append((self.revisions[-1][0], i['json']))

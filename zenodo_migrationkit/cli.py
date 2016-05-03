@@ -74,15 +74,24 @@ def get_record_uuids(recid):
 
 @migration.command()
 @click.option('--recid', '-r')
+@click.option('--with-dump', '-d', is_flag=True, default=False)
 @click.option('--with-traceback', '-t', is_flag=True, default=False)
 @with_appcontext
-def recordstest(recid=None, with_traceback=False):
+def recordstest(recid=None, with_traceback=False, with_dump=False):
     """Test records data migration."""
     for uid in get_record_uuids(recid):
         record = Record.get_record(uid)
         try:
+            if with_dump:
+                click.secho('# Before:', fg='green')
+                click.echo(
+                    json.dumps(record.dumps(), indent=2, sort_keys=True))
             record = transform_record(record)
             record.validate()
+            if with_dump:
+                click.secho('# After:', fg='green')
+                click.echo(
+                    json.dumps(record.dumps(), indent=2, sort_keys=True))
             # click.secho(
             #     'Success: {0}'.format(record.get('recid', uid)), fg='green')
         except Exception:
