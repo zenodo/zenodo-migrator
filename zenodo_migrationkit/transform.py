@@ -36,7 +36,6 @@ from invenio_db import db
 from invenio_oaiserver.response import datetime_to_datestamp
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
-from invenio_records_files.models import RecordsBuckets
 from six import string_types
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -69,13 +68,6 @@ def migrate_record(record_uuid, logger=None):
                     if logger:
                         logger.warning("Inclusion request exists.")
             del record['provisional_communities']
-        # Create RecordsBuckets entries
-        bucket_ids = {file['bucket'] for file in record.get('files', [])}
-        for bucket_id in bucket_ids:
-            db.session.add(
-                RecordsBuckets(record_id=record.id, bucket_id=bucket_id)
-            )
-
         db.session.commit()
     except NoResultFound:
         if logger:

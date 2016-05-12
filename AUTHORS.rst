@@ -28,4 +28,3 @@ Authors
 Module for migration of Zenodo data to Invenio 3.
 
 - Lars Holm Nielsen <lars.holm.nielsen@cern.ch>
-- Sami Hiltunen <sami.mikael.hiltunen@cern.ch>
