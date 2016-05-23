@@ -139,7 +139,7 @@ def cleandump(source, output, drop_marcxml=False):
     def clean_all(d):
         d['record'] = [clean(x) for x in d['record']]
         if d['record'][-1]['json']['access_right'] != 'open':
-            d['files'] = []
+            d['_files'] = []
         return d
 
     def clean(d):

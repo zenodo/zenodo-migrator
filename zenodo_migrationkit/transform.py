@@ -96,9 +96,11 @@ def transform_record(record):
         _migrate_owners,
         _migrate_description,
         _migrate_imprint,
+        _migrate_part_of,
         _migrate_references,
         _migrate_communities,
         _migrate_provisional_communities,
+        _migrate_thesis,
         _add_schema,
     ]
 
@@ -127,19 +129,55 @@ def _migrate_description(record):
     return record
 
 
+def _migrate_thesis(record):
+    if 'thesis_supervisors' in record:
+        record['thesis'] = dict(
+            supervisors=record['thesis_supervisors']
+        )
+        del record['thesis_supervisors']
+
+    if 'thesis_university' in record:
+        if 'thesis' not in record:
+            record['thesis'] = dict()
+        record['thesis']['university'] = record['thesis_university']
+    return record
+
+
 def _migrate_imprint(record):
-    """Transform upload type."""
+    """Transform imprint."""
+    if 'isbn' in record:
+        if 'imprint' not in record:
+            record['imprint'] = dict()
+        record['imprint']['isbn'] = record['isbn']
+        del record['isbn']
+
     if 'imprint' not in record:
         return record
 
-    record['part_of'] = dict()
-    for k in ['publisher', 'title', 'year']:
-        if k in record['imprint']:
-            if k in record['part_of']:
-                raise Exception("Cannot migrate imprint")
-            record['part_of'][k] = record['imprint'][k]
+    # This was a computed property.
+    if 'year' in record['imprint']:
+        del record['imprint']['year']
 
-    del record['imprint']
+    return record
+
+
+def _migrate_part_of(record):
+    """Migrate part of."""
+    if 'part_of' not in record:
+        return record
+
+    for k in ['publisher', 'place', 'isbn']:
+        if k in record['part_of']:
+            if 'imprint' not in record:
+                record['imprint'] = {}
+            if k in record['imprint']:
+                raise Exception("Cannot migrate part_of/imprint", record)
+            record['imprint'][k] = record['part_of'][k]
+            del record['part_of'][k]
+
+    if 'year' in record['part_of']:
+        del record['part_of']['year']
+
     return record
 
 
@@ -165,10 +203,16 @@ def _migrate_authors(record):
 def _migrate_meetings(record):
     """Transform upload type."""
     if 'conference_url' in record:
-        if 'meetings' not in record:
-            record['meetings'] = dict()
-        record['meetings']['url'] = record['conference_url']
+        if 'meeting' not in record:
+            record['meeting'] = dict()
+        record['meeting']['url'] = record['conference_url']
         del record['conference_url']
+
+    if 'meetings' in record:
+        if 'meeting' not in record:
+            record['meeting'] = dict()
+        record['meeting'].update(record['meetings'])
+        del record['meetings']
 
     return record
 
@@ -181,7 +225,6 @@ def _migrate_owners(record):
 
     record['owners'] = [int(o['id'])] if o.get('id') else []
     record['_internal'] = {
-        'state': 'published',
         'source': {
             'legacy_deposit_id': o.get('deposition_id'),
             'agents': [{
