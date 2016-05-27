@@ -26,6 +26,7 @@ from celery.utils.log import get_task_logger
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
 
+from .deposit_transform import migrate_deposit as migrate_deposit_func
 from .transform import migrate_record as migrate_record_func
 
 logger = get_task_logger(__name__)
@@ -46,3 +47,10 @@ def migrate_files():
         f.uri = '/afs/cern.ch/project/zenodo/prod/{0}'.format(
             f.uri[len('/opt/zenodo/'):])
     db.session.commit()
+
+
+@shared_task(ignore_results=True)
+def migrate_deposit(record_uuid):
+    """Migrate a record."""
+    # Migrate deposit
+    migrate_deposit_func(record_uuid, logger=logger)

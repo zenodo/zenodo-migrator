@@ -39,7 +39,7 @@ from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
-from .tasks import migrate_files, migrate_record
+from .tasks import migrate_deposit, migrate_files, migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -56,17 +56,17 @@ def files():
     migrate_files.delay()
 
 
-def get_record_uuids(recid):
+def get_record_uuids(recid, pid_type='recid'):
     """Get list of record uuids to process."""
     if recid is None:
         uuids = [str(x[0]) for x in PersistentIdentifier.query.filter_by(
-                pid_type='recid', object_type='rec', status='R'
+                pid_type=pid_type, object_type='rec', status='R'
             ).values(
                 PersistentIdentifier.object_uuid
             )]
     else:
         resolver = Resolver(
-            pid_type='recid', object_type='rec', getter=Record.get_record)
+            pid_type=pid_type, object_type='rec', getter=Record.get_record)
         pid, record = resolver.resolve(recid)
         uuids = [str(record.id)]
     return uuids
@@ -180,3 +180,17 @@ def reindex(pid_type):
     ))
     click.echo("Sending tasks...")
     RecordIndexer().bulk_index(query)
+
+
+@migration.command()
+@click.option('--depid', '-d')
+@with_appcontext
+def depositsrun(depid=None):
+    """Run records data migration."""
+    with click.progressbar(get_record_uuids(depid, pid_type='depid')) \
+            as records_bar:
+        for record_uuid in records_bar:
+            if depid:
+                migrate_deposit(record_uuid)
+            else:
+                migrate_deposit.delay(record_uuid)

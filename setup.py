@@ -71,6 +71,8 @@ install_requires = [
     'invenio-communities>=1.0.0a1',
     'lxml>=3.4.4',
     'python-dateutil>=2.4.2',
+    'invenio-deposit>=1.0.0.dev20150000',
+    'zenodo>=3.0.0.dev20150000',
 ]
 
 packages = find_packages()

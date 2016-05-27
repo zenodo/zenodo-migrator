@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Zenodo.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2016 CERN.
 #
 # Zenodo is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License as
@@ -23,41 +23,20 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 
-notifications:
-  email: false
+"""Deposit migration tests."""
 
-sudo: false
+from __future__ import absolute_import, print_function
 
-language: python
+from invenio_records.api import Record
 
-cache:
-  - pip
+from zenodo_migrationkit.deposit_transform import transform_deposit
 
-env:
-  # Temporarily disable until release of Zenodo
-  # - REQUIREMENTS=lowest
-  # - REQUIREMENTS=release
-  - REQUIREMENTS=devel
 
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "requirements-builder --level=pypi setup.py > .travis-release-requirements.txt"
-  - "requirements-builder --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+def test_deposits_transform(db, deposit_dump):
+    """Test version import."""
+    for dep_meta, dep_meta_expected in deposit_dump[3:]:
+        dep_record = Record.create(dep_meta)
+        d = transform_deposit(dep_record)
+        # assert dict(d) == dep_meta_expected
+        d.commit()  # JSONSchema validation
+        db.session.commit()
