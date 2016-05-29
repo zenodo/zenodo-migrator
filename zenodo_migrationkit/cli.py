@@ -87,6 +87,7 @@ def recordstest(recid=None, with_traceback=False, with_dump=False):
                 click.echo(
                     json.dumps(record.dumps(), indent=2, sort_keys=True))
             record = transform_record(record)
+            record.pop('provisional_communities', None)
             record.validate()
             if with_dump:
                 click.secho('# After:', fg='green')

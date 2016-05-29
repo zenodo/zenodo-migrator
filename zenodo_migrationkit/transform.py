@@ -50,10 +50,11 @@ def migrate_record(record_uuid, logger=None):
                 logger.info("Record already migrated.")
             return
         record = transform_record(record)
+        provisional_communities = record.pop('provisional_communities', None)
         record.commit()
         # Create provisional communities.
-        if 'provisional_communities' in record:
-            for c_id in record['provisional_communities']:
+        if provisional_communities:
+            for c_id in provisional_communities:
                 try:
                     c = Community.get(c_id)
                     if c:
@@ -67,7 +68,6 @@ def migrate_record(record_uuid, logger=None):
                 except InclusionRequestExistsError:
                     if logger:
                         logger.warning("Inclusion request exists.")
-            del record['provisional_communities']
         db.session.commit()
     except NoResultFound:
         if logger:
@@ -113,7 +113,7 @@ def _remove_fields(record):
         'fft', 'files_to_upload', 'files_to_upload', 'collections',
         'preservation_score', 'restriction', 'url', 'version_history',
         'documents', 'creation_date', 'modification_date',
-        'system_control_number', 'system_number',
+        'system_control_number', 'system_number', 'altmetric_id'
     ]
 
     for k in keys:
