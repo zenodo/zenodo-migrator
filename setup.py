@@ -47,7 +47,7 @@ tests_require = [
 
 extras_require = {
     'docs': [
-        'Sphinx>=1.3',
+        'Sphinx>=1.4',
     ],
     'tests': tests_require,
 }
@@ -58,21 +58,20 @@ for reqs in extras_require.values():
 
 install_requires = [
     'celery>=3.1.19',
-    'click>=5.0.0',
-    'Flask-CeleryExt>=0.1.0',
-    'Flask-CLI>=0.2.1',
-    'invenio-db>=1.0.0a9',
-    'invenio-files-rest>=1.0.0a1',
-    'invenio-indexer>=1.0.0a2',
-    'invenio-oaiserver>=1.0.0a1',
-    'invenio-pidstore>=1.0.0a7',
-    'invenio-records>=1.0.0a9',
-    'invenio-search>=1.0.0a4',
+    'click>=6.6',
+    'Flask-CeleryExt>=0.2.0',
+    'Flask-CLI>=0.3.0',
     'invenio-communities>=1.0.0a1',
+    'invenio-db>=1.0.0a9',
+    'invenio-deposit>=1.0.0.dev20150000',
+    'invenio-files-rest>=1.0.0a3',
+    'invenio-indexer>=1.0.0a5',
+    'invenio-oaiserver>=1.0.0a5',
+    'invenio-pidstore>=1.0.0a7',
+    'invenio-records>=1.0.0a15',
+    'invenio-search>=1.0.0a7',
     'lxml>=3.4.4',
     'python-dateutil>=2.4.2',
-    'invenio-deposit>=1.0.0.dev20150000',
-    'zenodo>=3.0.0.dev20150000',
 ]
 
 packages = find_packages()

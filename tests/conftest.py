@@ -35,11 +35,19 @@ from os.path import dirname, join
 
 import pytest
 from celery.messaging import establish_connection
-from flask_cli import ScriptInfo
+from flask import Flask
+from flask_celeryext import FlaskCeleryExt
+from flask_cli import FlaskCLI, ScriptInfo
 from invenio_db import db as db_
+from invenio_db import InvenioDB
+from invenio_indexer import InvenioIndexer
+from invenio_pidstore import InvenioPIDStore
+from invenio_records import InvenioRecords
+from invenio_search import InvenioSearch
 from sqlalchemy_utils.functions import create_database, database_exists, \
     drop_database
-from zenodo.factory import create_app
+
+from zenodo_migrationkit import MigrationKit
 
 
 @pytest.yield_fixture(scope='session')
@@ -67,8 +75,13 @@ def env_config(instance_path):
 def config():
     """Default configuration."""
     return dict(
-        CFG_SITE_NAME="testserver",
-        DEBUG_TB_ENABLED=False,
+        BROKER_URL=os.environ.get('BROKER_URL', 'memory://'),
+        CELERY_ALWAYS_EAGER=True,
+        CELERY_CACHE_BACKEND="memory",
+        CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+        CELERY_RESULT_BACKEND="cache",
+        INDEXER_DEFAULT_DOC_TYPE='record-v1.0.0',
+        INDEXER_DEFAULT_INDEX='records-record-v1.0.0',
         LOGIN_DISABLED=False,
         OAUTHLIB_INSECURE_TRANSPORT=True,
         SQLALCHEMY_DATABASE_URI=os.environ.get(
@@ -79,11 +92,22 @@ def config():
 
 
 @pytest.yield_fixture(scope='session')
-def app(env_config, config):
+def app(env_config, config, instance_path):
     """Flask application fixture."""
-    app = create_app(**config)
-    with app.app_context():
-        yield app
+    app_ = Flask(__name__, instance_path=instance_path)
+    app_.config.update(config)
+
+    FlaskCLI(app_)
+    FlaskCeleryExt(app_)
+    InvenioDB(app_)
+    InvenioRecords(app_)
+    InvenioIndexer(app_)
+    InvenioSearch(app_)
+    InvenioPIDStore(app_)
+    MigrationKit(app_)
+
+    with app_.app_context():
+        yield app_
 
 
 @pytest.yield_fixture()

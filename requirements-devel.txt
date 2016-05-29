@@ -26,4 +26,4 @@
 -e git+https://github.com/inveniosoftware/invenio-deposit.git#egg=invenio-deposit
 -e git+git://github.com/inveniosoftware/invenio-files-rest.git#egg=invenio-files-rest
 -e git+git://github.com/inveniosoftware/invenio-indexer.git#egg=invenio-indexer
--e git+https://github.com/krzysztof/zenodo.git@migrationkit_dep#egg=zenodo
+

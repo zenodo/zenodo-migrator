@@ -32,19 +32,17 @@ from functools import reduce
 
 from dateutil.parser import parse as timestamp2dt
 from flask import current_app
+from invenio_db import db
+from invenio_records.api import Record
 from werkzeug.local import LocalProxy
 
 current_jsonschemas = LocalProxy(
     lambda: current_app.extensions['invenio-jsonschemas']
 )
-default_logger = logging.getLogger('zenodo-migrationkit')
 
 
 def migrate_deposit(record_uuid, logger=None):
     """Migrate a record."""
-    from invenio_db import db
-    from invenio_records.api import Record
-    # Migrate record
     deposit = Record.get_record(record_uuid)
     if '$schema' in deposit:
         depid = deposit['_deposit']['id']
@@ -183,7 +181,7 @@ def is_draft(deposit):
 
 def transform_deposit(deposit, logger=None):
     """Transform legacy JSON."""
-    logger = logger or default_logger
+    logger = logger or current_app.logger
     # If the deposit is open in draft mode
     if is_draft(deposit):
         transformations = [
