@@ -140,6 +140,7 @@ def _migrate_thesis(record):
         if 'thesis' not in record:
             record['thesis'] = dict()
         record['thesis']['university'] = record['thesis_university']
+        del record['thesis_university']
     return record
 
 
