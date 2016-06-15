@@ -92,6 +92,7 @@ def transform_record(record):
         _migrate_authors,
         _migrate_oai,
         _migrate_grants,
+        _migrate_license,
         _migrate_meetings,
         _migrate_owners,
         _migrate_description,
@@ -319,6 +320,16 @@ def _migrate_provisional_communities(record):
             record['provisional_communities'] = list(set(comms))
     else:
         del record['provisional_communities']
+    return record
+
+
+def _migrate_license(record):
+    if 'license' not in record:
+        return record
+
+    record['license'] = {'$ref': 'http://dx.zenodo.org/licenses/{0}'.format(
+        record['license']['identifier'])}
+
     return record
 
 
