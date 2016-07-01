@@ -76,7 +76,7 @@ def dumpfiles():
                             )))
                             fp.write(",")
                     except Exception:
-                        print "Failed: %s" % bd.id
+                        print("Failed: {0}".format(bd.id))
             fp.seek(fp.tell()-1)
             fp.write("]")
 
