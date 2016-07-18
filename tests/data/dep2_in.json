@@ -1,0 +1,186 @@
+{
+  "_deposit": {
+    "bucket_id": "88888888-8888-8888-8888-888888888888"
+  },
+  "_p": {
+    "created": "2016-04-16T15:26:32+00:00",
+    "has_sip": false,
+    "id": 20,
+    "modified": "2016-04-16T15:30:40+00:00",
+    "state": "inprogress",
+    "submitted": false,
+    "user_id": 30
+  },
+  "drafts": {
+    "_default": {
+      "completed": false,
+      "flags": {
+        "access_conditions": [
+          "hidden",
+          "disabled"
+        ],
+        "access_right": [],
+        "communities": [],
+        "conference_acronym": [],
+        "conference_dates": [],
+        "conference_place": [],
+        "conference_session": [],
+        "conference_session_part": [],
+        "conference_title": [],
+        "conference_url": [],
+        "contributors": [],
+        "contributors-0": [],
+        "contributors-0-affiliation": [],
+        "contributors-0-gnd": [],
+        "contributors-0-name": [],
+        "contributors-0-orcid": [],
+        "contributors-0-type": [],
+        "creators": [],
+        "creators-0": [],
+        "creators-0-affiliation": [],
+        "creators-0-gnd": [],
+        "creators-0-name": [],
+        "creators-0-orcid": [],
+        "description": [],
+        "doi": [],
+        "embargo_date": [
+          "hidden",
+          "disabled"
+        ],
+        "grants": [],
+        "image_type": [
+          "hidden",
+          "disabled"
+        ],
+        "imprint_isbn": [],
+        "imprint_place": [],
+        "imprint_publisher": [],
+        "journal_issue": [],
+        "journal_pages": [],
+        "journal_title": [],
+        "journal_volume": [],
+        "keywords": [],
+        "keywords-0": [],
+        "license": [
+          "touched"
+        ],
+        "notes": [],
+        "partof_pages": [],
+        "partof_title": [],
+        "plupload_file": [],
+        "prereserve_doi": [],
+        "publication_date": [],
+        "publication_type": [
+          "hidden",
+          "disabled"
+        ],
+        "references": [],
+        "related_identifiers": [],
+        "related_identifiers-0": [],
+        "related_identifiers-0-identifier": [],
+        "related_identifiers-0-relation": [],
+        "related_identifiers-0-scheme": [],
+        "subjects": [],
+        "subjects-0": [],
+        "subjects-0-identifier": [],
+        "subjects-0-scheme": [],
+        "subjects-0-term": [],
+        "thesis_supervisors": [],
+        "thesis_supervisors-0": [],
+        "thesis_supervisors-0-affiliation": [],
+        "thesis_supervisors-0-gnd": [],
+        "thesis_supervisors-0-name": [],
+        "thesis_supervisors-0-orcid": [],
+        "thesis_university": [],
+        "title": [],
+        "upload_type": []
+      },
+      "validate": false,
+      "values": {
+        "access_conditions": "",
+        "access_right": "open",
+        "communities": [],
+        "conference_acronym": "",
+        "conference_dates": "",
+        "conference_place": "",
+        "conference_session": "",
+        "conference_session_part": "",
+        "conference_title": "",
+        "conference_url": "",
+        "contributors": [
+          {
+            "affiliation": "",
+            "gnd": "",
+            "name": "",
+            "orcid": "",
+            "type": "ContactPerson"
+          }
+        ],
+        "creators": [
+          {
+            "affiliation": "",
+            "gnd": "",
+            "name": "John Baz Foobar",
+            "orcid": ""
+          }
+        ],
+        "description": "",
+        "doi": "",
+        "embargo_date": "2016-04-16",
+        "grants": [],
+        "imprint_isbn": "",
+        "imprint_place": "",
+        "imprint_publisher": "",
+        "journal_issue": "",
+        "journal_pages": "",
+        "journal_title": "",
+        "journal_volume": "",
+        "keywords": [
+          ""
+        ],
+        "license": "cc-zero",
+        "notes": "",
+        "partof_pages": "",
+        "partof_title": "",
+        "publication_date": "2016-04-16",
+        "references": [],
+        "related_identifiers": [
+          {
+            "identifier": "",
+            "relation": "isSupplementTo",
+            "scheme": ""
+          }
+        ],
+        "subjects": [
+          {
+            "identifier": "",
+            "scheme": "",
+            "term": ""
+          }
+        ],
+        "thesis_supervisors": [
+          {
+            "affiliation": "",
+            "gnd": "",
+            "name": "",
+            "orcid": ""
+          }
+        ],
+        "thesis_university": "",
+        "title": "FOOBAR TITLE"
+      }
+    }
+  },
+  "files": [
+    {
+      "checksum": "13ca0ab23e25af4a1249596443560e12",
+      "id": "1704b39d-e39d-4280-8b81-e0117188e063",
+      "name": "Document-Name.PDF",
+      "path": "/path/to/zenodo/data/33333333-3333-3333-3333-333333333333-Document-Name.PDF",
+      "size": 12341234
+    }
+  ],
+  "sips": [],
+  "title": "FOOBAR TITLE",
+  "type": "upload"
+}

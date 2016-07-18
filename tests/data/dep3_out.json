@@ -1,0 +1,22 @@
+{
+  "license": {
+    "$ref": "https://dx.zenodo.org/licenses/cc-zero"
+  },
+  "$schema": "https://zenodo.org/schemas/deposits/records/record-v1.0.0.json",
+  "resource_type": {
+    "type": "dataset"
+  },
+  "title": "No title",
+  "description": "No description",
+  "_deposit": {
+    "submitted": "2016-02-12T09:29:19+00:00",
+    "status": "draft",
+    "id": "50",
+    "owners": [
+      33,
+      1
+    ]
+  },
+  "publication_date": "2016-02-12",
+  "access_right": "open"
+}

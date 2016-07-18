@@ -1,0 +1,241 @@
+{
+  "_deposit": {
+    "bucket_id": "636a2ee1-e5da-4e72-be32-8c5376a5c2db"
+  },
+  "_p": {
+    "created": "2015-08-11T08:08:25+00:00",
+    "has_sip": false,
+    "id": 100,
+    "modified": "2016-02-01T12:42:02+00:00",
+    "state": "inprogress",
+    "submitted": false,
+    "user_id": 30
+  },
+  "drafts": {
+    "_default": {
+      "completed": false,
+      "flags": {
+        "access_conditions": [
+          "hidden",
+          "disabled"
+        ],
+        "access_right": [],
+        "communities": [],
+        "conference_acronym": [],
+        "conference_dates": [],
+        "conference_place": [],
+        "conference_session": [],
+        "conference_session_part": [],
+        "conference_title": [],
+        "conference_url": [],
+        "contributors": [],
+        "contributors-0": [],
+        "contributors-0-affiliation": [],
+        "contributors-0-gnd": [],
+        "contributors-0-name": [],
+        "contributors-0-orcid": [],
+        "contributors-0-type": [],
+        "contributors-1": [],
+        "contributors-1-affiliation": [],
+        "contributors-1-gnd": [],
+        "contributors-1-name": [],
+        "contributors-1-orcid": [],
+        "contributors-1-type": [],
+        "contributors-2": [],
+        "contributors-2-affiliation": [],
+        "contributors-2-gnd": [],
+        "contributors-2-name": [],
+        "contributors-2-orcid": [],
+        "contributors-2-type": [],
+        "creators": [],
+        "creators-0": [],
+        "creators-0-affiliation": [],
+        "creators-0-gnd": [],
+        "creators-0-name": [],
+        "creators-0-orcid": [],
+        "description": [],
+        "doi": [],
+        "embargo_date": [
+          "hidden",
+          "disabled"
+        ],
+        "grants": [],
+        "image_type": [
+          "hidden",
+          "disabled"
+        ],
+        "imprint_isbn": [],
+        "imprint_place": [],
+        "imprint_publisher": [],
+        "journal_issue": [],
+        "journal_pages": [],
+        "journal_title": [],
+        "journal_volume": [],
+        "keywords": [],
+        "keywords-0": [],
+        "license": [
+          "hidden",
+          "disabled",
+          "touched"
+        ],
+        "notes": [],
+        "partof_pages": [],
+        "partof_title": [],
+        "plupload_file": [],
+        "prereserve_doi": [],
+        "publication_date": [],
+        "publication_type": [
+          "hidden",
+          "disabled"
+        ],
+        "references": [],
+        "related_identifiers": [],
+        "related_identifiers-0": [],
+        "related_identifiers-0-identifier": [],
+        "related_identifiers-0-relation": [],
+        "related_identifiers-0-scheme": [],
+        "related_identifiers-1": [],
+        "related_identifiers-1-identifier": [],
+        "related_identifiers-1-relation": [],
+        "related_identifiers-1-scheme": [],
+        "related_identifiers-2": [],
+        "related_identifiers-2-identifier": [],
+        "related_identifiers-2-relation": [],
+        "related_identifiers-2-scheme": [],
+        "related_identifiers-3": [],
+        "related_identifiers-3-identifier": [],
+        "related_identifiers-3-relation": [],
+        "related_identifiers-3-scheme": [],
+        "subjects": [],
+        "subjects-0": [],
+        "subjects-0-identifier": [],
+        "subjects-0-scheme": [],
+        "subjects-0-term": [],
+        "thesis_supervisors": [],
+        "thesis_supervisors-0": [],
+        "thesis_supervisors-0-affiliation": [],
+        "thesis_supervisors-0-gnd": [],
+        "thesis_supervisors-0-name": [],
+        "thesis_supervisors-0-orcid": [],
+        "thesis_university": [],
+        "title": [],
+        "upload_type": []
+      },
+      "validate": false,
+      "values": {
+        "access_conditions": "",
+        "access_right": "closed",
+        "communities": [],
+        "conference_acronym": "",
+        "conference_dates": "",
+        "conference_place": "",
+        "conference_session": "",
+        "conference_session_part": "",
+        "conference_title": "",
+        "conference_url": "",
+        "contributors": [
+          {
+            "affiliation": "no",
+            "gnd": "",
+            "name": "fooname",
+            "orcid": "",
+            "type": "DataCollector"
+          },
+          {
+            "affiliation": "yes",
+            "gnd": "",
+            "name": "ok?",
+            "orcid": "",
+            "type": "ContactPerson"
+          },
+          {
+            "affiliation": "aaaaa",
+            "gnd": "",
+            "name": "james, ronaldson",
+            "orcid": "",
+            "type": "ContactPerson"
+          }
+        ],
+        "creators": [
+          {
+            "affiliation": "yes",
+            "gnd": "",
+            "name": "james author",
+            "orcid": ""
+          }
+        ],
+        "description": "Some description",
+        "doi": "",
+        "embargo_date": "2015-08-11",
+        "grants": [],
+        "imprint_isbn": "",
+        "imprint_place": "",
+        "imprint_publisher": "",
+        "journal_issue": "",
+        "journal_pages": "",
+        "journal_title": "",
+        "journal_volume": "",
+        "keywords": [
+          ""
+        ],
+        "license": "cc-zero",
+        "notes": "",
+        "partof_pages": "",
+        "partof_title": "",
+        "publication_date": "2015-08-11",
+        "references": [],
+        "related_identifiers": [
+          {
+            "identifier": " arXiv:1601.08082",
+            "relation": "isSupplementTo",
+            "scheme": ""
+          },
+          {
+            "identifier": "hello",
+            "relation": "isSupplementTo",
+            "scheme": ""
+          },
+          {
+            "identifier": "arXiv:1601_.08082",
+            "relation": "isSupplementTo",
+            "scheme": ""
+          },
+          {
+            "identifier": "arXiv:1601.08082",
+            "relation": "isSupplementTo",
+            "scheme": "arxiv"
+          }
+        ],
+        "subjects": [
+          {
+            "identifier": "",
+            "scheme": "",
+            "term": ""
+          }
+        ],
+        "thesis_supervisors": [
+          {
+            "affiliation": "",
+            "gnd": "",
+            "name": "",
+            "orcid": ""
+          }
+        ],
+        "thesis_university": "",
+        "title": "Test title"
+      }
+    }
+  },
+  "files": [
+    {
+      "checksum": "7fd9c1632fc54ed13813b9b519ef4c4f",
+      "id": "3660d936-945c-4300-a4b0-1e8fb7670817",
+      "name": "testfile1.pdf",
+      "path": "/path/to/zenodo/data/30685759-ecce-4400-bf9c-4e3bb147bbd5-testfile1.pdf",
+      "size": 100000
+    }
+  ],
+  "sips": [],
+  "title": "Test title",
+  "type": "upload"
+}

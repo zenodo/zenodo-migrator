@@ -22,9 +22,14 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
--e git+git://github.com/inveniosoftware/invenio-communities#egg=invenio-communities
--e git+https://github.com/inveniosoftware/invenio-deposit.git#egg=invenio-deposit
--e git+git://github.com/inveniosoftware/invenio-indexer.git#egg=invenio-indexer
--e git+https://github.com/inveniosoftware/invenio-sipstore.git#egg=invenio-sipstore
--e git+https://github.com/zenodo/zenodo-accessrequests.git#egg=zenodo-accessrequests
--e git+git://github.com/zenodo/zenodo.git#egg=zenodo
+
+"""Loaders for zenodo data migration."""
+
+from __future__ import absolute_import, print_function
+
+from zenodo.modules.deposit.loaders.base import marshmallow_loader
+
+from .serializers.schemas.dump import DumpLegacyRecordSchemaV1
+
+#: Legacy deposit dump translator
+legacyjsondump_v1_translator = marshmallow_loader(DumpLegacyRecordSchemaV1)

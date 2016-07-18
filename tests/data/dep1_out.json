@@ -1,0 +1,45 @@
+{
+  "resource_type": {
+    "type": "software"
+  },
+  "title": "FoobarTitle",
+  "keywords": [
+    "KW1",
+    "Foobar-foo keyword"
+  ],
+  "doi": "10.1234/zenodo.55555",
+  "license": {
+    "$ref": "https://dx.zenodo.org/licenses/cc-by-nc-4.0"
+  },
+  "access_right": "open",
+  "publication_date": "2015-09-25",
+  "creators": [
+    {
+      "affiliation": "University of Foo",
+      "name": "Doe, John"
+    }
+  ],
+  "$schema": "https://zenodo.org/schemas/deposits/records/record-v1.0.0.json",
+  "description": "A software package for foobar research.",
+  "thesis": {
+    "supervisors": [
+      {
+        "affiliation": "University of Foo",
+        "name": "John Bazbar"
+      }
+    ],
+    "university": "University of Foo"
+  },
+  "_deposit": {
+    "status": "draft",
+    "owners": [
+      10,
+      1
+    ],
+    "id": "12345",
+    "submitted": "2016-01-01T20:00:05+00:00"
+  },
+  "communities": [
+    "foocomm"
+  ]
+}

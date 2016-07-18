@@ -27,18 +27,15 @@
 
 from __future__ import absolute_import, print_function
 
-# import pytest
-# from invenio_records.api import Record
+from invenio_records.api import Record
+
+from zenodo_migrationkit.deposit_transform import transform_deposit
 
 
-# @pytest.mark.skip(reason="Must be disentangle from zenodo.")
-# def test_deposits_transform(db, deposit_dump):
-#     """Test version import."""
-#     from zenodo_migrationkit.deposit_transform import transform_deposit
+def test_deposits_transform(app, db, deposit_dump):
+    """Test deposit transformation."""
 
-#     for dep_meta, dep_meta_expected in deposit_dump[3:]:
-#         dep_record = Record.create(dep_meta)
-#         d = transform_deposit(dep_record)
-#         # assert dict(d) == dep_meta_expected
-#         d.commit()  # JSONSchema validation
-#         db.session.commit()
+    for dep_in, dep_exp_out in deposit_dump:
+        deposit = Record.create(dep_in)
+        dep_out = transform_deposit(deposit)
+        assert dep_out == dep_exp_out

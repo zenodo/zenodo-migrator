@@ -41,11 +41,13 @@ from flask_cli import FlaskCLI, ScriptInfo
 from invenio_db import db as db_
 from invenio_db import InvenioDB
 from invenio_indexer import InvenioIndexer
+from invenio_jsonschemas import InvenioJSONSchemas
 from invenio_pidstore import InvenioPIDStore
 from invenio_records import InvenioRecords
 from invenio_search import InvenioSearch
 from sqlalchemy_utils.functions import create_database, database_exists, \
     drop_database
+from zenodo import config as c
 
 from zenodo_migrationkit import MigrationKit
 
@@ -72,6 +74,15 @@ def env_config(instance_path):
 
 
 @pytest.fixture(scope='session')
+def zenodo_config():
+    """Import config from Zenodo."""
+    return dict(
+        DEPOSIT_DEFAULT_JSONSCHEMA=c.DEPOSIT_DEFAULT_JSONSCHEMA,
+        DEPOSIT_CONTRIBUTOR_DATACITE2MARC=c.DEPOSIT_CONTRIBUTOR_DATACITE2MARC
+    )
+
+
+@pytest.fixture(scope='session')
 def config():
     """Default configuration."""
     return dict(
@@ -92,9 +103,10 @@ def config():
 
 
 @pytest.yield_fixture(scope='session')
-def app(env_config, config, instance_path):
+def app(env_config, zenodo_config, config, instance_path):
     """Flask application fixture."""
     app_ = Flask(__name__, instance_path=instance_path)
+    app_.config.update(zenodo_config)
     app_.config.update(config)
 
     FlaskCLI(app_)
@@ -102,6 +114,7 @@ def app(env_config, config, instance_path):
     InvenioDB(app_)
     InvenioRecords(app_)
     InvenioIndexer(app_)
+    InvenioJSONSchemas(app_)
     InvenioSearch(app_)
     InvenioPIDStore(app_)
     MigrationKit(app_)
@@ -155,6 +168,13 @@ def deposit_dump(datadir):
     :returns: Loaded dump of deposits (as a list of dict).
     :rtype: list
     """
-    with open(join(datadir, 'deposit.json')) as fp:
-        records = json.load(fp)
-    return records
+    dep_dumps = []
+    for i in range(1, 5):
+        fn_in = 'dep{}_in.json'.format(i)
+        fn_out = 'dep{}_out.json'.format(i)
+        with open(join(datadir, fn_in)) as fp:
+            dep_in = json.load(fp)
+        with open(join(datadir, fn_out)) as fp:
+            dep_out = json.load(fp)
+        dep_dumps.append((dep_in, dep_out))
+    return dep_dumps

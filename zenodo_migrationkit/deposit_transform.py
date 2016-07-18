@@ -27,14 +27,16 @@
 from __future__ import absolute_import, print_function
 
 import datetime
-import logging
 from functools import reduce
 
 from dateutil.parser import parse as timestamp2dt
 from flask import current_app
 from invenio_db import db
+from invenio_jsonschemas.errors import JSONSchemaNotFound
 from invenio_records.api import Record
 from werkzeug.local import LocalProxy
+
+from .loaders import legacyjsondump_v1_translator
 
 current_jsonschemas = LocalProxy(
     lambda: current_app.extensions['invenio-jsonschemas']
@@ -82,16 +84,10 @@ def _migrate_recid(d, logger):
 
 def _finalize(d, logger):
     """Finalize the migration."""
-    from invenio_jsonschemas.errors import JSONSchemaNotFound
-    from invenio_records.api import Record
     d['_n'].setdefault('$schema', current_jsonschemas.path_to_url(
         current_app.config['DEPOSIT_DEFAULT_JSONSCHEMA']
     ))
-    schema_url = d['_n']['$schema']
-    if not current_jsonschemas.url_to_path(schema_url):
-        logger.error("Deposit {depid} schema not found: {schema}.".format(
-            depid=d['_p']['id'], schema=schema_url))
-        raise JSONSchemaNotFound(schema_url)
+    # TODO: Migrate the original creation date
     # created = d['_p']['created']  # TODO: convert to datetime!
     d = Record(d['_n'], model=d.model)
     # d.model.created = created
@@ -153,11 +149,7 @@ def _migrate_draft(d, logger):
     draft_type, draft = list(d['drafts'].items())[0]
     draft_v = draft['values']
 
-    from zenodo.modules.deposit.loaders import legacyjson_v1_translator
-    draft_type, draft = list(d['drafts'].items())[0]
-    draft_v = draft['values']
-
-    draft_metadata = legacyjson_v1_translator(dict(metadata=draft_v))
+    draft_metadata = legacyjsondump_v1_translator(dict(metadata=draft_v))
     d['_n'].update(draft_metadata)
     return d
 
