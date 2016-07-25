@@ -32,14 +32,17 @@ import traceback
 
 import click
 from flask_cli import with_appcontext
+from invenio_db import db
 from invenio_indexer.api import RecordIndexer
+from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
-from .tasks import migrate_deposit, migrate_files, migrate_record
+from .tasks import migrate_deposit, migrate_files, \
+    migrate_github_remote_account, migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -195,3 +198,34 @@ def depositsrun(depid=None):
                 migrate_deposit(record_uuid)
             else:
                 migrate_deposit.delay(record_uuid)
+
+
+@migration.command()
+@with_appcontext
+@click.argument('old_client_id')
+@click.argument('new_client_id')
+def github_update_client_id(old_client_id, new_client_id):
+    """Update the ID for GitHub OAuthclient tokens."""
+    query = RemoteAccount.query.filter_by(client_id=old_client_id)
+    click.echo("Updating {0} client IDs..".format(query.count()))
+    query.update({RemoteAccount.client_id: new_client_id})
+    db.session.commit()
+
+
+@migration.command()
+@click.option('--remoteaccountid', '-i')
+@with_appcontext
+def githubrun(remoteaccountid):
+    """Run GitHub remote accounts data migration.
+
+    Example:
+       zenodo migration -i 1000
+    """
+    if remoteaccountid:  # If specified, run for only one remote account
+        migrate_github_remote_account(remoteaccountid)
+    else:
+        gh_remote_accounts = [ra for ra in RemoteAccount.query.all() if 'repos' in ra.extra_data]
+        click.echo("Sending {0} tasks ...".format(len(gh_remote_accounts)))
+        with click.progressbar(gh_remote_accounts) as gh_remote_accounts_bar:
+            for gh_remote_account in gh_remote_accounts_bar:
+                migrate_github_remote_account.delay(gh_remote_account.id)

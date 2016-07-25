@@ -38,10 +38,15 @@ from celery.messaging import establish_connection
 from flask import Flask
 from flask_celeryext import FlaskCeleryExt
 from flask_cli import FlaskCLI, ScriptInfo
+from invenio_accounts.testutils import create_test_user
+from invenio_accounts import InvenioAccounts
 from invenio_db import db as db_
 from invenio_db import InvenioDB
 from invenio_indexer import InvenioIndexer
 from invenio_jsonschemas import InvenioJSONSchemas
+from invenio_oauthclient import InvenioOAuthClient
+from invenio_oauth2server import InvenioOAuth2Server
+from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore import InvenioPIDStore
 from invenio_records import InvenioRecords
 from invenio_search import InvenioSearch
@@ -95,6 +100,7 @@ def config():
         INDEXER_DEFAULT_INDEX='records-record-v1.0.0',
         LOGIN_DISABLED=False,
         OAUTHLIB_INSECURE_TRANSPORT=True,
+        GITHUB_WEBHOOK_RECEIVER_ID='123456',
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             'SQLALCHEMY_DATABASE_URI', 'sqlite:///test.db'),
         TESTING=True,
@@ -112,6 +118,9 @@ def app(env_config, zenodo_config, config, instance_path):
     FlaskCLI(app_)
     FlaskCeleryExt(app_)
     InvenioDB(app_)
+    InvenioAccounts(app_)
+    InvenioOAuthClient(app_)
+    InvenioOAuth2Server(app_)
     InvenioRecords(app_)
     InvenioIndexer(app_)
     InvenioJSONSchemas(app_)
@@ -178,3 +187,31 @@ def deposit_dump(datadir):
             dep_out = json.load(fp)
         dep_dumps.append((dep_in, dep_out))
     return dep_dumps
+
+
+@pytest.fixture()
+def users(app, db):
+    """Create users."""
+    user1 = create_test_user(email='first@zenodo.org', password='test1')
+    user2 = create_test_user(email='second@zenodo.org', password='test2')
+
+    db.session.commit()
+
+    return [
+        {'email': user1.email, 'id': user1.id},
+        {'email': user2.email, 'id': user2.id},
+    ]
+
+
+@pytest.fixture
+def github_remote_accounts(datadir, users):
+    """Load GitHub remote account objects."""
+    with open(join(datadir, 'github_remote_accounts.json')) as fp:
+        gh_remote_accounts = json.load(fp)
+    remote_accounts = []
+    for idx, gh_ra in enumerate(gh_remote_accounts):
+        assert users[idx]['id'] == gh_ra['user_id']
+        ra = RemoteAccount.create(gh_ra['user_id'], 'clientid',
+                                  gh_ra['extra_data'])
+        remote_accounts.append(ra)
+    return remote_accounts

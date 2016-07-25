@@ -27,6 +27,7 @@ from invenio_db import db
 from invenio_files_rest.models import FileInstance
 
 from .deposit_transform import migrate_deposit as migrate_deposit_func
+from .github import migrate_github_remote_account_func
 from .transform import migrate_record as migrate_record_func
 
 logger = get_task_logger(__name__)
@@ -54,3 +55,9 @@ def migrate_deposit(record_uuid):
     """Migrate a record."""
     # Migrate deposit
     migrate_deposit_func(record_uuid, logger=logger)
+
+
+@shared_task(ignore_results=True)
+def migrate_github_remote_account(remote_account_id):
+    """Migrate GitHub remote account."""
+    migrate_github_remote_account_func(remote_account_id, logger=logger)
