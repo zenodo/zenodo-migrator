@@ -31,13 +31,13 @@ from click.testing import CliRunner
 from flask import Flask
 from flask_cli import FlaskCLI
 
-from zenodo_migrationkit import MigrationKit
-from zenodo_migrationkit.cli import migration
+from zenodo_migrator import ZenodoMigrator
+from zenodo_migrator.cli import migration
 
 
 def test_version():
     """Test version import."""
-    from zenodo_migrationkit import __version__
+    from zenodo_migrator import __version__
     assert __version__
 
 
@@ -45,15 +45,15 @@ def test_init():
     """Test extension initialization."""
     app = Flask('testapp')
     FlaskCLI(app)
-    ext = MigrationKit(app)
-    assert 'zenodo-migrationkit' in app.extensions
+    ext = ZenodoMigrator(app)
+    assert 'zenodo-migrator' in app.extensions
 
     app = Flask('testapp')
     FlaskCLI(app)
-    ext = MigrationKit()
-    assert 'zenodo-migrationkit' not in app.extensions
+    ext = ZenodoMigrator()
+    assert 'zenodo-migrator' not in app.extensions
     ext.init_app(app)
-    assert 'zenodo-migrationkit' in app.extensions
+    assert 'zenodo-migrator' in app.extensions
 
 
 def test_cli_group(script_info):

@@ -26,7 +26,22 @@
 
 from __future__ import absolute_import, print_function
 
-from .ext import MigrationKit
-from .version import __version__
 
-__all__ = ('__version__', 'MigrationKit')
+class ZenodoMigrator(object):
+    """Zenodo-Migrator extension."""
+
+    def __init__(self, app=None):
+        """Extension initialization."""
+        if app:
+            self.init_app(app)
+
+    def init_app(self, app):
+        """Flask application initialization."""
+        from .cli import migration
+        app.cli.add_command(migration)
+        app.config['MIGRATOR_RECORDS_DUMP_CLS'] = \
+            'zenodo_migrator.records.ZenodoRecordDump'
+        app.config['MIGRATOR_RECORDS_PID_FETCHERS'] = [
+            'zenodo_migrator.fetchers.legacy_oaiid'
+        ]
+        app.extensions['zenodo-migrator'] = self

@@ -1,8 +1,8 @@
 ============================
- Zenodo-MigrationKit v1.0.0
+ Zenodo-Migrator v1.0.0
 ============================
 
-Zenodo-MigrationKit v1.0.0 was released on TBD, 2015.
+Zenodo-Migrator v1.0.0 was released on TBD, 2015.
 
 About
 -----
@@ -19,18 +19,18 @@ What's new
 Installation
 ------------
 
-   $ pip install zenodo-migrationkit==1.0.0
+   $ pip install zenodo-migrator==1.0.0
 
 Documentation
 -------------
 
-   http://pythonhosted.org/zenodo-migrationkit/
+   http://pythonhosted.org/zenodo-migrator/
 
-Happy hacking and thanks for flying Zenodo-MigrationKit.
+Happy hacking and thanks for flying Zenodo-Migrator.
 
 | Invenio Development Team
 |   Email: info@invenio-software.org
 |   IRC: #invenio on irc.freenode.net
 |   Twitter: http://twitter.com/inveniosoftware
-|   GitHub: https://github.com/zenodo/zenodo-migrationkit
+|   GitHub: https://github.com/zenodo/zenodo-migrator
 |   URL: http://invenio-software.org

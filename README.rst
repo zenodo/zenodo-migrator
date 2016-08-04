@@ -22,23 +22,23 @@
     as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 =====================
- Zenodo-MigrationKit
+ Zenodo-Migrator
 =====================
 
-.. image:: https://img.shields.io/travis/zenodo/zenodo-migrationkit.svg
-        :target: https://travis-ci.org/zenodo/zenodo-migrationkit
+.. image:: https://img.shields.io/travis/zenodo/zenodo-migrator.svg
+        :target: https://travis-ci.org/zenodo/zenodo-migrator
 
-.. image:: https://img.shields.io/coveralls/zenodo/zenodo-migrationkit.svg
-        :target: https://coveralls.io/r/zenodo/zenodo-migrationkit
+.. image:: https://img.shields.io/coveralls/zenodo/zenodo-migrator.svg
+        :target: https://coveralls.io/r/zenodo/zenodo-migrator
 
-.. image:: https://img.shields.io/github/tag/zenodo/zenodo-migrationkit.svg
-        :target: https://github.com/zenodo/zenodo-migrationkit/releases
+.. image:: https://img.shields.io/github/tag/zenodo/zenodo-migrator.svg
+        :target: https://github.com/zenodo/zenodo-migrator/releases
 
-.. image:: https://img.shields.io/pypi/dm/zenodo-migrationkit.svg
-        :target: https://pypi.python.org/pypi/zenodo-migrationkit
+.. image:: https://img.shields.io/pypi/dm/zenodo-migrator.svg
+        :target: https://pypi.python.org/pypi/zenodo-migrator
 
-.. image:: https://img.shields.io/github/license/zenodo/zenodo-migrationkit.svg
-        :target: https://github.com/zenodo/zenodo-migrationkit/blob/master/LICENSE
+.. image:: https://img.shields.io/github/license/zenodo/zenodo-migrator.svg
+        :target: https://github.com/zenodo/zenodo-migrator/blob/master/LICENSE
 
 
 Module for migration of Zenodo data to Invenio 3.
@@ -46,4 +46,4 @@ Module for migration of Zenodo data to Invenio 3.
 *This is an experimental developer preview release.*
 
 * Free software: GPLv2 license
-* Documentation: https://pythonhosted.org/zenodo-migrationkit/
+* Documentation: https://pythonhosted.org/zenodo-migrator/

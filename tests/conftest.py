@@ -55,7 +55,7 @@ from invenio_search import InvenioSearch
 from sqlalchemy_utils.functions import create_database, database_exists
 from zenodo import config as c
 
-from zenodo_migrationkit import MigrationKit
+from zenodo_migrator import ZenodoMigrator
 
 
 @pytest.yield_fixture(scope='session')
@@ -127,7 +127,7 @@ def app(env_config, zenodo_config, config, instance_path):
     InvenioJSONSchemas(app_)
     InvenioSearch(app_)
     InvenioPIDStore(app_)
-    MigrationKit(app_)
+    ZenodoMigrator(app_)
 
     with app_.app_context():
         yield app_

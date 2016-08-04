@@ -24,7 +24,7 @@
 
 from __future__ import absolute_import, print_function
 
-from zenodo_migrationkit.serializers.schemas.utils import filter_empty_list, \
+from zenodo_migrator.serializers.schemas.utils import filter_empty_list, \
     is_valid, none_if_empty
 
 

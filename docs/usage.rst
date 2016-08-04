@@ -26,4 +26,4 @@
  Usage
 =======
 
-.. automodule:: zenodo_migrationkit
+.. automodule:: zenodo_migrator

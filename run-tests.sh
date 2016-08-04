@@ -23,7 +23,7 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 
-pydocstyle zenodo_migrationkit tests && \
+pydocstyle zenodo_migrator tests && \
 isort -rc -c -df **/*.py && \
 check-manifest --ignore ".travis-*" && \
 sphinx-build -qnNW docs docs/_build/html && \

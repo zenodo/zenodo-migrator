@@ -29,7 +29,7 @@ from __future__ import absolute_import, print_function
 
 from mock import patch
 
-from zenodo_migrationkit.github import migrate_github_remote_account_func
+from zenodo_migrator.github import migrate_github_remote_account_func
 
 gh_data_fixtures = {
     'cern/zenodo': {
@@ -60,7 +60,7 @@ class mock_gh_api_repository(object):
         return self._data[self.full_name]['id']
 
 
-@patch('zenodo_migrationkit.github.GitHubAPI')
+@patch('zenodo_migrator.github.GitHubAPI')
 def test_github_migration(gh_api_mock, app, db, github_remote_accounts):
     """Test deposit transformation."""
     gh_api_mock().api.repository = mock_gh_api_repository

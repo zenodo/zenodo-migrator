@@ -118,12 +118,12 @@ class PyTest(TestCommand):
 
 # Get the version string. Cannot be done with import!
 g = {}
-with open(os.path.join('zenodo_migrationkit', 'version.py'), 'rt') as fp:
+with open(os.path.join('zenodo_migrator', 'version.py'), 'rt') as fp:
     exec(fp.read(), g)
     version = g['__version__']
 
 setup(
-    name='zenodo-migrationkit',
+    name='zenodo-migrator',
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,
@@ -131,21 +131,21 @@ setup(
     license='GPLv2',
     author='CERN',
     author_email='info@zenodo.org',
-    url='https://github.com/zenodo/zenodo-migrationkit',
+    url='https://github.com/zenodo/zenodo-migrator',
     packages=packages,
     zip_safe=False,
     include_package_data=True,
     platforms='any',
     entry_points={
         'invenio_base.apps': [
-            'zenodo_migrationkit = zenodo_migrationkit:MigrationKit'
+            'zenodo_migrator = zenodo_migrator:ZenodoMigrator'
         ],
         'invenio_celery.tasks': [
-            'zenodo_migrationkit = zenodo_migrationkit.tasks'
+            'zenodo_migrator = zenodo_migrator.tasks'
         ],
         'invenio_migrator.things': [
-            'accessrequests = zenodo_migrationkit.legacy.accessrequests',
-            'secretlinks = zenodo_migrationkit.legacy.secretlinks',
+            'accessrequests = zenodo_migrator.legacy.accessrequests',
+            'secretlinks = zenodo_migrator.legacy.secretlinks',
         ],
     },
     extras_require=extras_require,

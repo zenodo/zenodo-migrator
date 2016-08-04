@@ -25,6 +25,6 @@
 API Docs
 ========
 
-zenodo_migrationkit
+zenodo_migrator
 -------------------
 

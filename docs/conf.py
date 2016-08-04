@@ -70,7 +70,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Zenodo-MigrationKit'
+project = u'Zenodo-Migrator'
 copyright = u'2015, CERN'
 author = u'CERN'
 
@@ -82,7 +82,7 @@ author = u'CERN'
 
 # Get the version string. Cannot be done with import!
 g = {}
-with open(os.path.join('..', 'zenodo_migrationkit', 'version.py'), 'rt') as fp:
+with open(os.path.join('..', 'zenodo_migrator', 'version.py'), 'rt') as fp:
     exec(fp.read(), g)
     version = g['__version__']
 
@@ -140,13 +140,13 @@ html_theme = 'alabaster'
 html_theme_options = {
     'description': 'Module for migration of Zenodo data to Invenio 3.',
     'github_user': 'inveniosoftware',
-    'github_repo': 'zenodo-migrationkit',
+    'github_repo': 'zenodo-migrator',
     'github_button': False,
     'github_banner': True,
     'show_powered_by': False,
     'extra_nav_links': {
-        'zenodo-migrationkit@GitHub': 'http://github.com/zenodo/zenodo-migrationkit',
-        'zenodo-migrationkit@PyPI': 'http://pypi.python.org/pypi/zenodo-migrationkit/',
+        'zenodo-migrator@GitHub': 'http://github.com/zenodo/zenodo-migrator',
+        'zenodo-migrator@PyPI': 'http://pypi.python.org/pypi/zenodo-migrator/',
     }
 }
 
@@ -251,7 +251,7 @@ html_sidebars = {
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'zenodo-migrationkit_namedoc'
+htmlhelp_basename = 'zenodo-migrator_namedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -273,7 +273,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'zenodo-migrationkit.tex', u'zenodo-migrationkit Documentation',
+  (master_doc, 'zenodo-migrator.tex', u'zenodo-migrator Documentation',
    u'CERN', 'manual'),
 ]
 
@@ -303,7 +303,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'zenodo-migrationkit', u'zenodo-migrationkit Documentation',
+    (master_doc, 'zenodo-migrator', u'zenodo-migrator Documentation',
      [author], 1)
 ]
 
@@ -317,8 +317,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'zenodo-migrationkit', u'Zenodo-MigrationKit Documentation',
-   author, 'zenodo-migrationkit', 'Module for migration of Zenodo data to Invenio 3.',
+  (master_doc, 'zenodo-migrator', u'Zenodo-Migrator Documentation',
+   author, 'zenodo-migrator', 'Module for migration of Zenodo data to Invenio 3.',
    'Miscellaneous'),
 ]
 

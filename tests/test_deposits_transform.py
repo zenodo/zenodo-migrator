@@ -29,7 +29,7 @@ from __future__ import absolute_import, print_function
 
 from invenio_records.api import Record
 
-from zenodo_migrationkit.deposit_transform import transform_deposit
+from zenodo_migrator.deposit_transform import transform_deposit
 
 
 def test_deposits_transform(app, db, deposit_dump):

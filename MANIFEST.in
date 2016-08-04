@@ -37,8 +37,8 @@ recursive-include docs Makefile
 recursive-include examples *.py
 recursive-include tests *.json
 recursive-include tests *.py
-recursive-include zenodo_migrationkit *.html
-recursive-include zenodo_migrationkit *.mo
-recursive-include zenodo_migrationkit *.po
+recursive-include zenodo_migrator *.html
+recursive-include zenodo_migrator *.mo
+recursive-include zenodo_migrator *.po
 recursive-include scripts *.py
 recursive-include tests *.json

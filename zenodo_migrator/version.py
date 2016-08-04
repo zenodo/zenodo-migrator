@@ -22,9 +22,9 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Version information for Zenodo-MigrationKit.
+"""Version information for Zenodo-Migrator.
 
-This file is imported by ``zenodo_migrationkit.__init__``,
+This file is imported by ``zenodo_migrator.__init__``,
 and parsed by ``setup.py``.
 """
 
