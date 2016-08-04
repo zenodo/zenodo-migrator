@@ -30,8 +30,8 @@ from invenio_db import db
 from invenio_github.api import GitHubAPI
 from invenio_github.models import Release, ReleaseStatus, Repository
 from invenio_oauthclient.models import RemoteAccount
-from invenio_pidstore.models import PersistentIdentifier
 from invenio_pidstore.errors import PIDDoesNotExistError
+from invenio_pidstore.models import PersistentIdentifier
 from sqlalchemy.orm.exc import NoResultFound
 
 

@@ -38,14 +38,14 @@ from celery.messaging import establish_connection
 from flask import Flask
 from flask_celeryext import FlaskCeleryExt
 from flask_cli import FlaskCLI, ScriptInfo
-from invenio_accounts.testutils import create_test_user
 from invenio_accounts import InvenioAccounts
+from invenio_accounts.testutils import create_test_user
 from invenio_db import db as db_
 from invenio_db import InvenioDB
 from invenio_indexer import InvenioIndexer
 from invenio_jsonschemas import InvenioJSONSchemas
-from invenio_oauthclient import InvenioOAuthClient
 from invenio_oauth2server import InvenioOAuth2Server
+from invenio_oauthclient import InvenioOAuthClient
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore import InvenioPIDStore
 from invenio_records import InvenioRecords

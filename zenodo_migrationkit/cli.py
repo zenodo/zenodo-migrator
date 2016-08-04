@@ -34,6 +34,7 @@ import click
 from flask_cli import with_appcontext
 from invenio_db import db
 from invenio_indexer.api import RecordIndexer
+from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_pidstore.resolver import Resolver
@@ -41,12 +42,34 @@ from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
-from .tasks import migrate_deposit, migrate_files, \
-    migrate_github_remote_account, migrate_record
+from .tasks import load_accessrequest, load_secretlink, migrate_deposit, \
+    migrate_files, migrate_github_remote_account, migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
 
+#
+# Invenio-Migrator CLI 'dumps' command extensions
+#
+@dumps.command()
+@click.argument('sources', type=click.File('r'), nargs=-1)
+@with_appcontext
+def loadaccessrequests(sources):
+    """Load access requests."""
+    loadcommon(sources, load_accessrequest)
+
+
+@dumps.command()
+@click.argument('sources', type=click.File('r'), nargs=-1)
+@with_appcontext
+def loadsecretlinks(sources):
+    """Load secret links."""
+    loadcommon(sources, load_secretlink)
+
+
+#
+# Data Migration (post loading) CLI 'migration' commands
+#
 @click.group()
 def migration():
     """Command related to migrating Zenodo data."""

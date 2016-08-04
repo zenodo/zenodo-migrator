@@ -26,8 +26,6 @@
 
 from __future__ import absolute_import, print_function
 
-from .cli import migration
-
 
 class MigrationKit(object):
     """Zenodo-MigrationKit extension."""
@@ -39,6 +37,7 @@ class MigrationKit(object):
 
     def init_app(self, app):
         """Flask application initialization."""
+        from .cli import migration
         app.cli.add_command(migration)
         app.config['MIGRATOR_RECORDS_DUMP_CLS'] = \
             'zenodo_migrationkit.records.ZenodoRecordDump'

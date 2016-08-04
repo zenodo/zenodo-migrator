@@ -25,6 +25,8 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
+from invenio_migrator.tasks.utils import load_common
+from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit_transform import migrate_deposit as migrate_deposit_func
 from .github import migrate_github_remote_account_func
@@ -61,3 +63,29 @@ def migrate_deposit(record_uuid):
 def migrate_github_remote_account(remote_account_id):
     """Migrate GitHub remote account."""
     migrate_github_remote_account_func(remote_account_id, logger=logger)
+
+
+@shared_task()
+def load_accessrequest(data):
+    """Load the access requests from data dump.
+
+    :param data: Dictionary containing data.
+    :type data: dict
+    """
+    load_common(AccessRequest, data)
+
+
+def wash_secretlink_data(data):
+    """Wash the data from secretlink dump."""
+    data['revoked_at'] = data['revoked_at'] if data['revoked_at'] else None
+    return data
+
+
+@shared_task()
+def load_secretlink(data):
+    """Load a secret link from data dump.
+
+    :param data: Dictionary containing data.
+    :type data: dict
+    """
+    load_common(SecretLink, wash_secretlink_data(data))

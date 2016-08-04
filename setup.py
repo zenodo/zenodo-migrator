@@ -50,6 +50,26 @@ extras_require = {
         'Sphinx>=1.4',
     ],
     'tests': tests_require,
+    'loader': [
+        'celery>=3.1.19',
+        'Flask>=0.11.1',
+        'Flask-CeleryExt>=0.2.0',
+        'Flask-CLI>=0.4.0',
+        'invenio-communities>=1.0.0a1',
+        'invenio-db>=1.0.0a9',
+        'invenio-deposit>=1.0.0a2',
+        'invenio-files-rest>=1.0.0a3',
+        'invenio-github>=1.0.0a3',
+        'invenio-indexer>=1.0.0a5',
+        'invenio-oaiserver>=1.0.0a5',
+        'invenio-oauthclient>=1.0.0a7',
+        'invenio-pidstore>=1.0.0a7',
+        'invenio-records>=1.0.0a15',
+        'invenio-search>=1.0.0a7',
+        'lxml>=3.4.4',
+        'python-dateutil>=2.4.2',
+        'zenodo-accessrequests>=1.0.0a1',
+    ]
 }
 
 extras_require['all'] = []
@@ -57,24 +77,7 @@ for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
 install_requires = [
-    'celery>=3.1.19',
-    'click>=6.6',
-    'Flask>=0.11.1',
-    'Flask-CeleryExt>=0.2.0',
-    'Flask-CLI>=0.4.0',
-    'invenio-communities>=1.0.0a1',
-    'invenio-db>=1.0.0a9',
-    'invenio-deposit>=1.0.0a2',
-    'invenio-files-rest>=1.0.0a3',
-    'invenio-indexer>=1.0.0a5',
-    'invenio-oaiserver>=1.0.0a5',
-    'invenio-oauthclient>=1.0.0a7',
-    'invenio-pidstore>=1.0.0a7',
-    'invenio-github>=1.0.0a3',
-    'invenio-records>=1.0.0a15',
-    'invenio-search>=1.0.0a7',
-    'lxml>=3.4.4',
-    'python-dateutil>=2.4.2',
+    'invenio-migrator>=1.0.0a7.dev20160613',
 ]
 
 packages = find_packages()
@@ -139,6 +142,10 @@ setup(
         ],
         'invenio_celery.tasks': [
             'zenodo_migrationkit = zenodo_migrationkit.tasks'
+        ],
+        'invenio_migrator.things': [
+            'accessrequests = zenodo_migrationkit.legacy.accessrequests',
+            'secretlinks = zenodo_migrationkit.legacy.secretlinks',
         ],
     },
     extras_require=extras_require,

@@ -27,10 +27,10 @@
 
 from __future__ import absolute_import, print_function
 
-from mock import patch, MagicMock
+from invenio_oauthclient.proxies import current_oauthclient
+from mock import MagicMock, patch
 
 from zenodo_migrationkit.github import migrate_github_remote_account_func
-from invenio_oauthclient.proxies import current_oauthclient
 
 
 @patch('zenodo_migrationkit.github.GitHubAPI')
