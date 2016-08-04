@@ -27,16 +27,42 @@
 
 from __future__ import absolute_import, print_function
 
-from invenio_oauthclient.proxies import current_oauthclient
-from mock import MagicMock, patch
+from mock import patch
 
 from zenodo_migrationkit.github import migrate_github_remote_account_func
+
+gh_data_fixtures = {
+    'cern/zenodo': {
+        'id': 1,
+    },
+    'johndoe/foobar': {
+        'id': 2,
+    },
+    'janefoo/foobar': {
+        'id': 3,
+    },
+}
+
+
+class mock_gh_api_repository(object):
+
+    def __init__(self, owner, repo_name):
+        self.owner = owner
+        self.repo_name = repo_name
+        self._data = gh_data_fixtures
+
+    @property
+    def full_name(self):
+        return "/".join((self.owner, self.repo_name))
+
+    @property
+    def id(self):
+        return self._data[self.full_name]['id']
 
 
 @patch('zenodo_migrationkit.github.GitHubAPI')
 def test_github_migration(gh_api_mock, app, db, github_remote_accounts):
     """Test deposit transformation."""
-    gh_api_mock().api.repository().id=1234
-    gh_api_mock().api.repository().full_name='foo/bar'
+    gh_api_mock().api.repository = mock_gh_api_repository
     for ra in github_remote_accounts:
         migrate_github_remote_account_func(ra.id)

@@ -48,10 +48,11 @@ from invenio_oauth2server import InvenioOAuth2Server
 from invenio_oauthclient import InvenioOAuthClient
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore import InvenioPIDStore
+from invenio_pidstore.models import PersistentIdentifier
 from invenio_records import InvenioRecords
+from invenio_records.api import Record
 from invenio_search import InvenioSearch
-from sqlalchemy_utils.functions import create_database, database_exists, \
-    drop_database
+from sqlalchemy_utils.functions import create_database, database_exists
 from zenodo import config as c
 
 from zenodo_migrationkit import MigrationKit
@@ -146,8 +147,8 @@ def db(app):
     db_.create_all()
 
     yield db_
-
-    drop_database(str(db_.engine.url))
+    db_.session.remove()
+    db_.drop_all()
 
 
 @pytest.fixture()
@@ -204,8 +205,14 @@ def users(app, db):
 
 
 @pytest.fixture
-def github_remote_accounts(datadir, users):
+def github_remote_accounts(datadir, users, db):
     """Load GitHub remote account objects."""
+    # Create records and PIDs for GitHub releases
+    for recid in ('100', '101', '200', '201'):
+        r = Record.create({})
+        PersistentIdentifier.create('recid', recid, object_uuid=r.id)
+    db.session.commit()
+
     with open(join(datadir, 'github_remote_accounts.json')) as fp:
         gh_remote_accounts = json.load(fp)
     remote_accounts = []

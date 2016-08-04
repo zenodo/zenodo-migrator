@@ -28,6 +28,7 @@ from __future__ import absolute_import, print_function
 
 from invenio_db import db
 from invenio_github.api import GitHubAPI
+from invenio_github.errors import RepositoryAccessError
 from invenio_github.models import Release, ReleaseStatus, Repository
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore.errors import PIDDoesNotExistError
@@ -47,10 +48,17 @@ def migrate_github_remote_account_func(remote_account_id, logger=None):
                 continue
             try:
                 repo = Repository.get(user_id=ra.user_id, github_id=gh_repo.id,
-                        name=gh_repo.full_name)
+                                      name=gh_repo.full_name)
             except NoResultFound:
                 repo = Repository.create(user_id=ra.user_id,
-                        github_id=gh_repo.id, name=gh_repo.full_name)
+                                         github_id=gh_repo.id,
+                                         name=gh_repo.full_name)
+            except RepositoryAccessError as e:
+                if logger:
+                    logger.exception(
+                        'Repository has been already claimed by another user.')
+                continue
+                # TODO: Hook for this user will not be added.
             repo.hook = repo_vals['hook']
             if repo_vals['depositions']:
                 for dep in repo_vals['depositions']:
@@ -61,11 +69,11 @@ def migrate_github_remote_account_func(remote_account_id, logger=None):
                             tag=dep['github_ref'], repository_id=repo.id,
                             record_id=pid.get_assigned_object()).first()
                         if not release:
-                            release = Release(tag=dep['github_ref'],
-                                              errors=dep['errors'],
-                                              record_id=pid.get_assigned_object(),
-                                              repository_id=repo.id,
-                                              status=ReleaseStatus.PUBLISHED)
+                            release = Release(
+                                tag=dep['github_ref'], errors=dep['errors'],
+                                record_id=pid.get_assigned_object(),
+                                repository_id=repo.id,
+                                status=ReleaseStatus.PUBLISHED)
                             # TODO: DO SOMETHING WITH dep['doi']
                             # TODO: Update the date dep['submitted']
                             db.session.add(release)

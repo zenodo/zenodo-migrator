@@ -247,7 +247,8 @@ def githubrun(remoteaccountid):
     if remoteaccountid:  # If specified, run for only one remote account
         migrate_github_remote_account(remoteaccountid)
     else:
-        gh_remote_accounts = [ra for ra in RemoteAccount.query.all() if 'repos' in ra.extra_data]
+        gh_remote_accounts = [ra for ra in RemoteAccount.query.all()
+                              if 'repos' in ra.extra_data]
         click.echo("Sending {0} tasks ...".format(len(gh_remote_accounts)))
         with click.progressbar(gh_remote_accounts) as gh_remote_accounts_bar:
             for gh_remote_account in gh_remote_accounts_bar:
