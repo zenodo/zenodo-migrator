@@ -29,8 +29,10 @@ from __future__ import absolute_import, print_function
 import json
 import sys
 import traceback
+import time
 
 import click
+from celery.task.control import inspect
 from flask_cli import with_appcontext
 from invenio_db import db
 from invenio_indexer.api import RecordIndexer
@@ -43,7 +45,8 @@ from lxml import etree
 from six import StringIO
 
 from .tasks import load_accessrequest, load_secretlink, migrate_deposit, \
-    migrate_files, migrate_github_remote_account, migrate_record
+    migrate_files, migrate_github_remote_account, migrate_record, \
+    load_zenodo_user
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -65,6 +68,14 @@ def loadaccessrequests(sources):
 def loadsecretlinks(sources):
     """Load secret links."""
     loadcommon(sources, load_secretlink)
+
+
+@dumps.command()
+@click.argument('sources', type=click.File('r'), nargs=-1)
+@with_appcontext
+def loadusers_zenodo(sources):
+    """Load Zenodo users with name collision resolving."""
+    loadcommon(sources, load_zenodo_user, asynchronous=False)
 
 
 #
@@ -253,3 +264,12 @@ def githubrun(remoteaccountid):
         with click.progressbar(gh_remote_accounts) as gh_remote_accounts_bar:
             for gh_remote_account in gh_remote_accounts_bar:
                 migrate_github_remote_account.delay(gh_remote_account.id)
+
+
+@migration.command()
+@with_appcontext
+def wait():
+    """Wait for Celery tasks to finish."""
+    i = inspect()
+    while any(tasks_list for (_, tasks_list) in i.active().items()):
+        time.sleep(5)

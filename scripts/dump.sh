@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env bash
 #
 # This file is part of Zenodo.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2016 CERN.
 #
 # Zenodo is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License as
@@ -22,24 +22,20 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-include *.rst
-include *.sh
-include *.txt
-include .dockerignore
-include .editorconfig
-include .tx/config
-include LICENSE
-include pytest.ini
-recursive-include docs *.bat
-recursive-include docs *.py
-recursive-include docs *.rst
-recursive-include docs Makefile
-recursive-include examples *.py
-recursive-include tests *.json
-recursive-include tests *.py
-recursive-include zenodo_migrator *.html
-recursive-include zenodo_migrator *.mo
-recursive-include zenodo_migrator *.po
-recursive-include scripts *.py
-recursive-include scripts *.sh
-recursive-include tests *.json
+export DUMP_DIR=/opt/migrator/05_08_16
+mkdir $DUMP_DIR
+cd $DUMP_DIR
+inveniomigrator dump tokens
+inveniomigrator dump clients
+inveniomigrator dump remotetokens
+inveniomigrator dump remoteaccounts
+inveniomigrator dump userexts
+inveniomigrator dump secretlinks
+inveniomigrator dump accessrequests
+inveniomigrator dump featured
+inveniomigrator dump communities
+inveniomigrator dump records --with-json --latest-only
+inveniomigrator dump deposit
+inveniomigrator dump users
+mkdir ./communities
+cp /opt/zenodo/var/invenio.base-instance/static/media/communities/* ./communities/

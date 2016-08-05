@@ -26,6 +26,9 @@ from celery.utils.log import get_task_logger
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.utils import load_common
+from invenio_migrator.tasks.users import load_user
+from invenio_userprofiles.api import UserProfile
+from invenio_accounts.models import User
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit_transform import migrate_deposit as migrate_deposit_func
@@ -89,3 +92,41 @@ def load_secretlink(data):
     :type data: dict
     """
     load_common(SecretLink, wash_secretlink_data(data))
+
+
+@shared_task
+def load_zenodo_user(data):
+    """Load Zenodo-specifi user data dump with names collision resolving.
+
+    Note: This task, just as the original load_user task from invenio-migrator
+    has to be called synchronously.
+
+    Duplicate emails are prependended with a "DUPLICATE_[#]_" prefix for later
+    resolution by account merging. Colliding usernames are resolved by
+    prepending a next available numer at the end starting with 2, e.g.:
+    "username" (if collides) -> "username_2" ->
+    (if still collides) -> "username_3"
+
+    Upon collision, profile 'displayname' will still be the original nickname.
+    """
+    email = data['email'].strip()
+    email_cnt = User.query.filter_by(email=email).count()
+    if email_cnt > 0:
+        data['email'] = "DUPLICATE_{cnt}_{email}".format(cnt=email_cnt + 1,
+                                                         email=email)
+
+    nickname = data['nickname'].strip()
+    if nickname:
+        safe_username = str(nickname)
+        idx = 2
+        # If necessary, create a safe (non-colliding) username
+        while UserProfile.query.filter(
+                UserProfile._username == safe_username.lower()).count() > 0:
+            safe_username = "{nickname}_{idx}".format(nickname=nickname,
+                                                      idx=idx)
+            idx += 1
+            data['username'] = safe_username
+            data['displayname'] = nickname
+
+    # Call the original invenio-migrator loading task.
+    load_user.s(data).apply(throw=True)
