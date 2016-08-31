@@ -83,13 +83,22 @@ class DumpRelatedIdentifierV1(Schema):
         validate=validate.OneOf(choices=ALL_RELATION_TYPES))
 
 
+class DumpAlternateIdentifierV1(Schema):
+    """Schema for legacy 'related_identifier' field."""
+
+    identifier = fields.String(required=True)
+    scheme = fields.String()
+
+
 class DumpLegacyMetadataSchemaV1(LegacyMetadataSchemaV1):
     """Schema for legacy deposit metadata dump."""
 
     subjects = fields.Nested(DumpSubjectSchemaV1, many=True)
     related_identifiers = fields.Nested(DumpRelatedIdentifierV1, many=True)
+    alternate_identifiers = fields.Nested(DumpAlternateIdentifierV1, many=True)
     title = TrimmedString(required=True, validate=validate.Length(min=1))
     description = SanitizedHTML(required=True, validate=validate.Length(min=1))
+    doi = fields.String()
 
 
 class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
@@ -129,7 +138,7 @@ class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
             metadata.pop('embargo_date')
 
         # Supplement the access conditions with default
-        if metadata['access_right'] == 'embargoed' and \
+        if metadata['access_right'] == 'restricted' and \
                 'access_conditions' not in metadata:
             metadata['access_conditions'] = 'Not specified.'
 
@@ -158,7 +167,7 @@ class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
         if self._missing_or_none(metadata, 'description'):
             metadata['description'] = 'No description'
         if self._missing_or_none(metadata, 'title'):
-            metadata['title'] = 'No title'
+            metadata['title'] = 'Untitled'
 
         data['metadata'] = metadata
         return data
@@ -166,7 +175,7 @@ class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
     @staticmethod
     def pre_clean_empty(data):
         """Clean empty values."""
-        filter_people_list = filter_empty_list(keys=['name', 'affiliation'],
+        filter_people_list = filter_empty_list(keys=['name', ],
                                                remove_empty_keys=True)
         filter_identifiers = filter_empty_list(keys=['identifier', ],
                                                remove_empty_keys=True)
@@ -217,6 +226,7 @@ class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
         metadata.pop('modification_date', None)
         metadata.pop('recid', None)
         metadata.pop('version_id', None)
+        # import ipdb; ipdb.set_trace()
 
         for k, fun in empty_keys.items():
             if k in metadata.keys():

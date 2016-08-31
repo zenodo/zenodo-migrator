@@ -32,4 +32,5 @@ from zenodo.modules.deposit.loaders.base import marshmallow_loader
 from .serializers.schemas.dump import DumpLegacyRecordSchemaV1
 
 #: Legacy deposit dump translator
-legacyjsondump_v1_translator = marshmallow_loader(DumpLegacyRecordSchemaV1)
+legacyjsondump_v1_translator = marshmallow_loader(
+    DumpLegacyRecordSchemaV1, banned_prefixes=())

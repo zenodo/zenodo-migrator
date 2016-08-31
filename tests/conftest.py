@@ -100,6 +100,7 @@ def config():
         INDEXER_DEFAULT_DOC_TYPE='record-v1.0.0',
         INDEXER_DEFAULT_INDEX='records-record-v1.0.0',
         LOGIN_DISABLED=False,
+        JSONSCHEMAS_HOST='zenodo.org',
         OAUTHLIB_INSECURE_TRANSPORT=True,
         GITHUB_WEBHOOK_RECEIVER_ID='123456',
         SQLALCHEMY_DATABASE_URI=os.environ.get(
@@ -179,7 +180,7 @@ def deposit_dump(datadir):
     :rtype: list
     """
     dep_dumps = []
-    for i in range(1, 5):
+    for i in range(1, 8):
         fn_in = 'dep{}_in.json'.format(i)
         fn_out = 'dep{}_out.json'.format(i)
         with open(join(datadir, fn_in)) as fp:

@@ -23,15 +23,19 @@ from __future__ import absolute_import
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from invenio_accounts.models import User
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
-from invenio_migrator.tasks.utils import load_common
 from invenio_migrator.tasks.users import load_user
+from invenio_migrator.tasks.utils import load_common
+from invenio_pidstore.errors import PIDDeletedError
+from invenio_pidstore.models import PersistentIdentifier
+from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
-from invenio_accounts.models import User
+from zenodo.modules.deposit.api import ZenodoDeposit
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
-from .deposit_transform import migrate_deposit as migrate_deposit_func
+from .deposit import transform_deposit
 from .github import migrate_github_remote_account_func
 from .transform import migrate_record as migrate_record_func
 
@@ -57,9 +61,33 @@ def migrate_files():
 
 @shared_task(ignore_results=True)
 def migrate_deposit(record_uuid):
-    """Migrate a record."""
-    # Migrate deposit
-    migrate_deposit_func(record_uuid, logger=logger)
+    """Migrate a record.
+
+    :param record_uuid: UUID of the Deposit record.
+    :type record_uuid: str
+    """
+    # Get the deposit
+    deposit = Record.get_record(record_uuid)
+    new_deposit = transform_deposit(deposit, logger=logger)
+
+    new_deposit.commit()
+    # If deposit has a record, either add the '_deposit' info or remove deposit
+    # if the record was deleted.
+    if '_deposit' in new_deposit and 'pid' in new_deposit['_deposit']:
+        zenodo_deposit = ZenodoDeposit(new_deposit, model=new_deposit.model)
+        try:
+            rec_pid, record = zenodo_deposit.fetch_published()
+            record['_deposit'] = dict(zenodo_deposit['_deposit'])
+            record.commit()
+        except PIDDeletedError:
+            # If record has been deleted, delete the deposit PID and
+            # the deposit record.
+            deposit = Record.get_record(record_uuid)
+            depid = deposit['_deposit']['id']
+            PersistentIdentifier.query.filter_by(
+                pid_type='depid', pid_value=depid).one().delete()
+            deposit.delete()
+    db.session.commit()
 
 
 @shared_task(ignore_results=True)

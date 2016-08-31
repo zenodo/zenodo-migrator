@@ -27,10 +27,10 @@
 
 from __future__ import absolute_import, print_function
 
-
-from zenodo_migrator.tasks import load_zenodo_user
 from invenio_accounts.models import User
 from invenio_userprofiles.api import UserProfile
+
+from zenodo_migrator.tasks import load_zenodo_user
 
 
 def test_zenodo_users_loading(db):

@@ -1,11 +1,4 @@
 {
-  "_deposit": {
-    "bucket_id": "12341234-1234-1234-1234-123412341234"
-  },
-  "_n": {
-    "_deposit": {},
-    "title": "FoobarTitle"
-  },
   "_p": {
     "created": "2015-09-25T15:00:00+00:00",
     "has_sip": false,

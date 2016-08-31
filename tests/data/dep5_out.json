@@ -1,0 +1,25 @@
+{
+  "$schema": "http://zenodo.org/schemas/deposits/records/record-v1.0.0.json",
+  "_deposit": {
+    "id": "123456",
+    "status": "published",
+    "recid": 55555,
+    "owners": [
+      1000
+    ],
+    "created_by": 1000,
+    "pid": {
+      "type": "recid",
+      "value": "55555"
+    }
+  },
+  "_files": [
+    {
+      "size": 50000,
+      "checksum": "11111111111111111111111111111111",
+      "version_id": "12341234-1234-1234-1234-123412341234",
+      "bucket": "e8dd293e-76ab-4f9a-8b34-edffb274394c",
+      "key": "file.pdf"
+    }
+  ]
+}

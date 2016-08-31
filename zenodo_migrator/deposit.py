@@ -26,13 +26,10 @@
 
 from __future__ import absolute_import, print_function
 
-import datetime
+from copy import deepcopy
 from functools import reduce
 
-from dateutil.parser import parse as timestamp2dt
 from flask import current_app
-from invenio_db import db
-from invenio_jsonschemas.errors import JSONSchemaNotFound
 from invenio_records.api import Record
 from werkzeug.local import LocalProxy
 
@@ -43,23 +40,14 @@ current_jsonschemas = LocalProxy(
 )
 
 
-def migrate_deposit(record_uuid, logger=None):
-    """Migrate a record."""
-    deposit = Record.get_record(record_uuid)
-    if '$schema' in deposit:
-        depid = deposit['_deposit']['id']
-        if logger:
-            logger.info("Deposit {depid} already migrated".format(depid=depid))
-        return
-    else:
-        deposit = transform_deposit(deposit, logger)
-        deposit.commit()
-        db.session.commit()
-
-
 def _init(d, *args):
-    """Initialize the migration."""
-    d.setdefault('_n', dict())
+    """Initialize the migration.
+
+    New transformed deposit metadata will be added to the '_n' key, which
+    will later replace the root dictionary.
+    """
+    assert '_n' not in d
+    d['_n'] = dict()
     d['_n'].setdefault('_deposit', dict())
     return d
 
@@ -70,15 +58,21 @@ def _migrate_recid(d, logger):
     if sips:
         recids = [int(sip['metadata']['recid']) for sip in sips]
         if len(set(recids)) == 1:
-            d['_n']['_deposit']['recid'] = recids[0]
+            recid = recids[0]
+            d['_n']['_deposit']['recid'] = recid
+            recid_pid = {
+                'type': 'recid',
+                'value': str(recid)
+            }
+            d['_n']['_deposit'].setdefault('pid', recid_pid)
         elif not recids:
             logger.error("Deposit {depid} has SIPs but no recids!".format(
                 depid=d['_p']['id']))
-            raise Exception("Deposit has multiple recids")
+            raise Exception("Deposit has SIP but no recid.")
         else:
             logger.error("Deposit {depid} has multiple recids:{recids}".format(
                 depid=d['_p']['id'], recids=list(set(recids))))
-            raise Exception("Deposit has multiple recids")
+            raise Exception("Deposit has multiple recids.")
     return d
 
 
@@ -110,10 +104,12 @@ def _migrate_doi(d, *args):
 def _migrate_internal(d, *args):
     """Migrate some non-metadata fields."""
     d['_n']['_deposit'].setdefault('owners', []).append(d['_p']['user_id'])
-    d['_n']['_deposit']['owners'].append(1)  # TODO: hack for admin
+    d['_n']['_deposit']['created_by'] = d['_p']['user_id']
     d['_n']['_deposit']['id'] = str(d['_p']['id'])
-    d['_n']['_deposit']['submitted'] = d['_p']['modified']
-
+    if '_files' in d:
+        d['_n']['_files'] = deepcopy(d['_files'])
+    if '_buckets' in d:
+        d['_n']['_buckets'] = deepcopy(d['_bucket'])
     return d
 
 
@@ -142,10 +138,6 @@ def _migrate_published(d, *args):
 def _migrate_draft(d, logger):
     """Migrate draft information."""
     d['_n']['_deposit']['status'] = 'draft'
-    if len(d['drafts']) > 1:
-        logger.error("Deposit {depid} has multiple drafts: {drafts}.".format(
-            depid=d['_p']['id'], drafts=list(d['drafts'].keys())))
-        raise Exception("Deposit has multiple drafts.")
     draft_type, draft = list(d['drafts'].items())[0]
     draft_v = draft['values']
 
@@ -154,44 +146,62 @@ def _migrate_draft(d, logger):
     return d
 
 
-def is_draft(deposit):
-    """Determine if deposit should be in draft mode."""
-    date_deposit = timestamp2dt(deposit['_p']['modified']).date()
-    date_now = datetime.datetime.now().date()
-    tdelta_open = datetime.timedelta(days=365)
+def _migrate_new_draft(d, logger):
+    """Migrate deposit as a new deposit."""
+    d['_n']['_deposit']['status'] = 'draft'
+    return d
 
-    if not deposit['drafts']:  # No draft information available
+
+def is_draft(deposit):
+    """Check if draft is valid and should be transformed."""
+    drafts = deposit['drafts']
+    # If no draft at all, or more than one draft or draft by completed
+    if (not drafts) or (len(drafts) > 1) \
+            or (list(drafts.values())[0]['completed']):
         return False
-    if len(deposit['drafts']) > 1 and (date_now - date_deposit) > tdelta_open:
-        # Drafts older than a year with multiple drafts open (legacy data)
-        return False
-    draft = list(deposit['drafts'].values())[0]
-    if draft['completed']:
-        return False
-    return True
+    else:
+        return True
+
+
+def is_published(deposit):
+    """Check if deposit has been already published before."""
+    return deposit['_p']['submitted']
 
 
 def transform_deposit(deposit, logger=None):
     """Transform legacy JSON."""
+    deposit = deepcopy(deposit)
     logger = logger or current_app.logger
+
+    draft_transformations = [
+        _init,
+        _migrate_recid,
+        _migrate_draft,
+        _migrate_doi,
+        _fix_none_values,
+        _migrate_internal,
+        _finalize,
+    ]
+    published_transformations = [
+        _init,
+        _migrate_recid,
+        _migrate_published,
+        _migrate_internal,
+        _finalize,
+    ]
+    new_deposit_transformations = [
+        _init,
+        _migrate_new_draft,
+        _migrate_internal,
+        _finalize,
+    ]
+
     # If the deposit is open in draft mode
     if is_draft(deposit):
-        transformations = [
-            _init,
-            _migrate_recid,
-            _migrate_draft,
-            _migrate_doi,
-            _fix_none_values,
-            _migrate_internal,
-            _finalize,
-        ]
+        transformations = draft_transformations
+    elif is_published(deposit):
+        transformations = published_transformations
     else:
-        transformations = [
-            _init,
-            _migrate_recid,
-            _migrate_published,
-            _migrate_internal,
-            _finalize,
-        ]
+        transformations = new_deposit_transformations
     return reduce(lambda deposit, fun: fun(deposit, logger), transformations,
                   deposit)

@@ -29,13 +29,14 @@ from __future__ import absolute_import, print_function
 
 from invenio_records.api import Record
 
-from zenodo_migrator.deposit_transform import transform_deposit
+from zenodo_migrator.deposit import transform_deposit
 
 
 def test_deposits_transform(app, db, deposit_dump):
     """Test deposit transformation."""
 
-    for dep_in, dep_exp_out in deposit_dump:
-        deposit = Record.create(dep_in)
-        dep_out = transform_deposit(deposit)
-        assert dep_out == dep_exp_out
+    deposit_dump = [deposit_dump[6]]
+    for idx, (inp, expected) in enumerate(deposit_dump, 1):
+        deposit = Record.create(inp)
+        transformed = transform_deposit(deposit)
+        assert transformed == expected, "Failed at testcase {0}".format(idx)

@@ -6,16 +6,15 @@
   "resource_type": {
     "type": "dataset"
   },
-  "title": "No title",
+  "title": "Untitled",
   "description": "No description",
   "_deposit": {
-    "submitted": "2016-02-12T09:29:19+00:00",
     "status": "draft",
     "id": "50",
     "owners": [
-      33,
-      1
-    ]
+      33
+    ],
+    "created_by": 33
   },
   "publication_date": "2016-02-12",
   "access_right": "open"

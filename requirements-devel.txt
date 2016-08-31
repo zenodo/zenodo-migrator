@@ -22,6 +22,5 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
--e git+https://github.com/krzysztof/invenio-migrator.git@oauth2server#egg=invenio-migrator
--e git+https://github.com/zenodo/zenodo-accessrequests.git#egg=zenodo-accessrequests
+-e git+https://github.com/krzysztof/invenio-migrator.git@collisions#egg=invenio-migrator
 -e git+git://github.com/zenodo/zenodo.git#egg=zenodo

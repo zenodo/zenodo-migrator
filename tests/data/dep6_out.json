@@ -1,0 +1,20 @@
+{
+  "_deposit": {
+    "id": "5555",
+    "status": "draft",
+    "owners": [
+      2000
+    ],
+    "created_by": 2000
+  },
+  "_files": [
+    {
+      "key": "File",
+      "size": 222222222,
+      "version_id": "12341234-1234-1234-1234-123412341234",
+      "checksum": "11111111111111111111111111111111",
+      "bucket": "00000000-0000-0000-0000-000000001234"
+    }
+  ],
+  "$schema": "http://zenodo.org/schemas/deposits/records/record-v1.0.0.json"
+}

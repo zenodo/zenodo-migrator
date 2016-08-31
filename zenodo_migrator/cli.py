@@ -28,8 +28,8 @@ from __future__ import absolute_import, print_function
 
 import json
 import sys
-import traceback
 import time
+import traceback
 
 import click
 from celery.task.control import inspect
@@ -44,9 +44,9 @@ from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
-from .tasks import load_accessrequest, load_secretlink, migrate_deposit, \
-    migrate_files, migrate_github_remote_account, migrate_record, \
-    load_zenodo_user
+from .tasks import load_accessrequest, load_secretlink, load_zenodo_user, \
+    migrate_deposit, migrate_files, migrate_github_remote_account, \
+    migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -93,19 +93,21 @@ def files():
     migrate_files.delay()
 
 
-def get_record_uuids(recid, pid_type='recid'):
+def get_uuid_from_pid_value(pid_value, pid_type='recid'):
+    """Get the UUID of record from pid_value and pid_type."""
+    resolver = Resolver(
+        pid_type=pid_type, object_type='rec', getter=Record.get_record)
+    pid, record = resolver.resolve(pid_value)
+    return str(record.id)
+
+
+def get_record_uuids(pid_type='recid'):
     """Get list of record uuids to process."""
-    if recid is None:
-        uuids = [str(x[0]) for x in PersistentIdentifier.query.filter_by(
-                pid_type=pid_type, object_type='rec', status='R'
-            ).values(
-                PersistentIdentifier.object_uuid
-            )]
-    else:
-        resolver = Resolver(
-            pid_type=pid_type, object_type='rec', getter=Record.get_record)
-        pid, record = resolver.resolve(recid)
-        uuids = [str(record.id)]
+    uuids = [str(x[0]) for x in PersistentIdentifier.query.filter_by(
+            pid_type=pid_type, object_type='rec', status='R'
+        ).values(
+            PersistentIdentifier.object_uuid
+        )]
     return uuids
 
 
@@ -116,7 +118,11 @@ def get_record_uuids(recid, pid_type='recid'):
 @with_appcontext
 def recordstest(recid=None, with_traceback=False, with_dump=False):
     """Test records data migration."""
-    for uid in get_record_uuids(recid):
+    if recid:
+        uuids = [get_uuid_from_pid_value(recid)]
+    else:
+        uuids = get_record_uuids()
+    for uid in uuids:
         record = Record.get_record(uid)
         try:
             if with_dump:
@@ -147,8 +153,11 @@ def recordsrun(no_delay=False, recid=None):
     """Run records data migration."""
     if not no_delay:
         click.echo('Sending migration background tasks..')
-
-    with click.progressbar(get_record_uuids(recid)) as records_bar:
+    if recid:
+        uuids = [get_uuid_from_pid_value(recid)]
+    else:
+        uuids = get_record_uuids()
+    with click.progressbar(uuids) as records_bar:
         for record_uuid in records_bar:
             if no_delay:
                 migrate_record_func(record_uuid)
@@ -207,31 +216,47 @@ def cleandump(source, output, drop_marcxml=False):
 
 
 @migration.command()
-@click.argument('pid_type')
+@click.option('--pid_type', '-t')
+@click.option('--uuid', '-u')
 @with_appcontext
-def reindex(pid_type):
+def reindex(pid_type=None, uuid=None):
     """Load a JSON dump for Zenodo."""
-    query = (x[0] for x in PersistentIdentifier.query.filter_by(
-        pid_type=pid_type, object_type='rec'
-    ).values(
-        PersistentIdentifier.object_uuid
-    ))
-    click.echo("Sending tasks...")
-    RecordIndexer().bulk_index(query)
+    assert not (pid_type is not None and uuid is not None), \
+        "Only 'pid_type' or 'uuid' can be provided but not both."
+    if pid_type:
+        query = (x[0] for x in PersistentIdentifier.query.filter_by(
+            pid_type=pid_type, object_type='rec'
+        ).values(
+            PersistentIdentifier.object_uuid
+        ))
+        click.echo("Sending tasks...")
+        RecordIndexer().bulk_index(query)
+    elif uuid:
+        RecordIndexer().index_by_id(uuid)
 
 
 @migration.command()
 @click.option('--depid', '-d')
+@click.option('--uuid', '-u')
+@click.option('--eager', '-e', is_flag=True, default=False)
 @with_appcontext
-def depositsrun(depid=None):
+def depositsrun(depid=None, uuid=None, eager=None):
     """Run records data migration."""
-    with click.progressbar(get_record_uuids(depid, pid_type='depid')) \
-            as records_bar:
-        for record_uuid in records_bar:
-            if depid:
-                migrate_deposit(record_uuid)
-            else:
-                migrate_deposit.delay(record_uuid)
+    assert not (depid is not None and uuid is not None), \
+        "Either 'depid' or 'uuid' can be provided as parameter, but not both."
+    if not (depid or uuid):
+        with click.progressbar(get_record_uuids(pid_type='depid')) \
+                as records_bar:
+            for record_uuid in records_bar:
+                if eager:
+                    migrate_deposit(record_uuid)
+                else:
+                    migrate_deposit.delay(record_uuid)
+    elif uuid:
+        migrate_deposit(uuid)
+    elif depid:
+        uuid = get_uuid_from_pid_value(depid, pid_type='depid')
+        migrate_deposit(uuid)
 
 
 @migration.command()
@@ -271,5 +296,5 @@ def githubrun(remoteaccountid):
 def wait():
     """Wait for Celery tasks to finish."""
     i = inspect()
-    while any(tasks_list for (_, tasks_list) in i.active().items()):
+    while len(sum(i.reserved().values(), []) + sum(i.active().values(), [])):
         time.sleep(5)

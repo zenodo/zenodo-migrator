@@ -35,7 +35,9 @@ def is_true_value(value):
     True for all integers (including zero) and non-empty string, dict, list.
     """
     if isinstance(value, int):
-        return True
+        return True  # All integers are valid values
+    elif isinstance(value, (str, text_type)):
+        return bool(value.strip())  # " \t" is also invalid
     else:
         return bool(value)
 
@@ -58,10 +60,8 @@ def is_valid(keys=None):
                 if (keys is None or k in keys) and is_true_value(v):
                     return True
             return False
-        elif isinstance(elem, (list, str, text_type)):
-            return bool(elem)
         else:
-            return elem is not None
+            return is_true_value(elem)
     return _inner
 
 

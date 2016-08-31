@@ -1,0 +1,754 @@
+{
+  "sips": [
+    {
+      "package": "package info",
+      "metadata": {
+        "license": {
+          "identifier": "cc-by",
+          "license": "Creative Commons Attribution",
+          "source": "opendefinition.org",
+          "url": "http://www.opendefinition.org/licenses/cc-by"
+        },
+        "prereserve_doi": {
+          "doi": "10.5281/zenodo.55555",
+          "recid": 55555
+        },
+        "doi": "10.5281/zenodo.55555",
+        "authors": [
+          {
+            "name": "FirstName1 LastName1 *, FirstName2 LastName2, FirstName3 LastName3, FirstName4 LastName4."
+          }
+        ],
+        "subjects": [],
+        "__meta_metadata__": {
+          "license": {
+            "type": "derived",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.446003",
+            "json_id": "license",
+            "after": {},
+            "function": [
+              "license",
+              "rules",
+              "derived",
+              0,
+              "function"
+            ]
+          },
+          "prereserve_doi": {
+            "type": "UNKNOWN",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.443697",
+            "json_id": "prereserve_doi",
+            "after": {},
+            "function": "UNKNOWN"
+          },
+          "doi": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": 3,
+            "timestamp": "2016-06-17T10:38:17.445563",
+            "json_id": "doi",
+            "after": {},
+            "function": [
+              "00000"
+            ]
+          },
+          "communities": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.444314",
+            "json_id": "communities",
+            "after": {},
+            "function": [
+              "980__"
+            ]
+          },
+          "__model_info__": {
+            "names": [
+              "__default__"
+            ]
+          },
+          "_first_author": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.447003",
+            "json_id": "_first_author",
+            "after": {
+              "connect": [
+                {
+                  "connected_field": "authors",
+                  "update_function": "sync_authors"
+                }
+              ]
+            },
+            "function": [
+              "100__"
+            ]
+          },
+          "authors": {
+            "type": "derived",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.444004",
+            "json_id": "authors",
+            "after": {
+              "connect": [
+                {
+                  "connected_field": "_first_author",
+                  "update_function": "sync_authors"
+                },
+                {
+                  "connected_field": "_additional_authors",
+                  "update_function": "sync_authors"
+                }
+              ]
+            },
+            "function": [
+              "authors",
+              "rules",
+              "derived",
+              0,
+              "function"
+            ]
+          },
+          "subjects": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.436310",
+            "json_id": "subjects",
+            "after": {},
+            "function": [
+              "1111_"
+            ]
+          },
+          "__aliases__": {
+            "additional_authors": "_additional_authors",
+            "first_author": "_first_author",
+            "creator": "_first_author"
+          },
+          "description": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.442348",
+            "json_id": "description",
+            "after": {},
+            "function": [
+              "520__"
+            ]
+          },
+          "recid": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": 0,
+            "timestamp": "2016-06-17T10:38:17.446534",
+            "json_id": "recid",
+            "after": {
+              "connect": [
+                {
+                  "connected_field": "_id",
+                  "update_function": null
+                }
+              ]
+            },
+            "function": [
+              "001"
+            ]
+          },
+          "_additional_authors": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.434884",
+            "json_id": "_additional_authors",
+            "after": {
+              "connect": [
+                {
+                  "connected_field": "authors",
+                  "update_function": "sync_authors"
+                }
+              ]
+            },
+            "function": [
+              "700__"
+            ]
+          },
+          "__continuable_errors__": [
+            "Adding a new field 'prereserve_doi' ('prereserve_doi') without definition",
+            "Producer CError - Unable to produce 'prereserve_doi'.\n u'prereserve_doi'"
+          ],
+          "access_right": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.436876",
+            "json_id": "access_right",
+            "after": {},
+            "function": [
+              "542__"
+            ]
+          },
+          "title": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.435585",
+            "json_id": "title",
+            "after": {},
+            "function": [
+              "245__"
+            ]
+          },
+          "fft": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.437140",
+            "json_id": "fft",
+            "after": {},
+            "function": [
+              "FFT__"
+            ]
+          },
+          "grants": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.434004",
+            "json_id": "grants",
+            "after": {},
+            "function": [
+              "536__"
+            ]
+          },
+          "upload_type": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.443004",
+            "json_id": "upload_type",
+            "after": {},
+            "function": [
+              "980__"
+            ]
+          },
+          "contributors": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.435210",
+            "json_id": "contributors",
+            "after": {},
+            "function": [
+              "700__"
+            ]
+          },
+          "related_identifiers": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.448110",
+            "json_id": "related_identifiers",
+            "after": {},
+            "function": [
+              "773__"
+            ]
+          },
+          "__errors__": [],
+          "owner": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": true,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.433796",
+            "json_id": "owner",
+            "after": {},
+            "function": [
+              "8560_"
+            ]
+          },
+          "provisional_communities": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.433046",
+            "json_id": "provisional_communities",
+            "after": {},
+            "function": [
+              "980__"
+            ]
+          },
+          "__additional_info__": {
+            "namespace": "recordext",
+            "master_format": "marc"
+          },
+          "journal": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.442771",
+            "json_id": "journal",
+            "after": {},
+            "function": [
+              "909C4"
+            ]
+          },
+          "publication_date": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": [
+                  "publication_date",
+                  "json_ext",
+                  "dumps"
+                ],
+                "loads": [
+                  "publication_date",
+                  "json_ext",
+                  "loads"
+                ]
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.444876",
+            "json_id": "publication_date",
+            "after": {},
+            "function": [
+              "260__"
+            ]
+          },
+          "thesis_supervisors": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.436060",
+            "json_id": "thesis_supervisors",
+            "after": {},
+            "function": [
+              "700__"
+            ]
+          },
+          "alternate_identifiers": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.432684",
+            "json_id": "alternate_identifiers",
+            "after": {},
+            "function": [
+              "00000"
+            ]
+          },
+          "keywords": {
+            "type": "creator",
+            "ext": {
+              "json_ext": {
+                "dumps": null,
+                "loads": null
+              }
+            },
+            "hidden": false,
+            "pid": null,
+            "timestamp": "2016-06-17T10:38:17.434423",
+            "json_id": "keywords",
+            "after": {},
+            "function": [
+              "6531_"
+            ]
+          }
+        },
+        "description": "<p>Some description.</p>",
+        "recid": 55555,
+        "_additional_authors": [],
+        "access_right": "open",
+        "communities": [],
+        "fft": [
+          {
+            "name": "file",
+            "comment": "0",
+            "path": "/path/to/file/file.pdf",
+            "restriction": ""
+          }
+        ],
+        "publication_date": "2016-06-18",
+        "grants": [],
+        "upload_type": {
+          "subtype": "article",
+          "type": "publication"
+        },
+        "contributors": [],
+        "related_identifiers": [],
+        "owner": {
+          "deposition_id": 123456,
+          "email": "user1@test.test",
+          "id": 1000,
+          "username": ""
+        },
+        "title": "TITLE",
+        "provisional_communities": [
+          "zenodo"
+        ],
+        "journal": {
+          "volume": "5",
+          "issue": "5",
+          "title": "Some Journal",
+          "pages": "123-133",
+          "year": "2016"
+        },
+        "_first_author": {
+          "name": "FirstName1 LastName1 *, FirstName2 LastName2, FirstName3 LastName3, FirstName4 LastName4."
+        },
+        "thesis_supervisors": [],
+        "alternate_identifiers": [],
+        "keywords": [
+          "Keyword1, keyword2."
+        ]
+      },
+      "id": "12341234-1234-1234-1234-123412341234",
+      "task_ids": [
+        1234,
+        1234
+      ],
+      "agents": [
+        {
+          "ip_address": "10.20.30.40",
+          "role": "creator",
+          "email_address": "user1@test.test",
+          "user_id": 1000
+        }
+      ],
+      "timestamp": "2016-06-17T08:38:17.502062+00:00"
+    }
+  ],
+  "type": "upload",
+  "_deposit": {},
+  "_p": {
+    "has_sip": true,
+    "state": "done",
+    "created": "2016-06-17T08:36:39+00:00",
+    "id": 123456,
+    "submitted": true,
+    "modified": "2016-06-17T08:38:17+00:00",
+    "user_id": 1000
+  },
+  "_files": [
+    {
+      "size": 50000,
+      "checksum": "11111111111111111111111111111111",
+      "version_id": "12341234-1234-1234-1234-123412341234",
+      "bucket": "e8dd293e-76ab-4f9a-8b34-edffb274394c",
+      "key": "file.pdf"
+    }
+  ],
+  "drafts": {
+    "_default": {
+      "validate": false,
+      "flags": {
+        "license": [
+          "touched"
+        ],
+        "prereserve_doi": [],
+        "doi": [],
+        "access_conditions": [
+          "hidden",
+          "disabled"
+        ],
+        "conference_session_part": [],
+        "partof_title": [],
+        "imprint_publisher": [],
+        "creators-0-affiliation": [],
+        "plupload_file": [],
+        "references": [],
+        "creators": [],
+        "description": [],
+        "image_type": [
+          "hidden",
+          "disabled"
+        ],
+        "access_right": [],
+        "communities": [],
+        "creators-0-name": [],
+        "journal_volume": [],
+        "upload_type": [],
+        "subjects-0-identifier": [],
+        "contributors": [],
+        "thesis_supervisors-0-gnd": [],
+        "conference_dates": [],
+        "journal_issue": [],
+        "conference_acronym": [],
+        "contributors-0-orcid": [],
+        "embargo_date": [
+          "hidden",
+          "disabled"
+        ],
+        "related_identifiers-0-scheme": [],
+        "contributors-0-type": [],
+        "thesis_university": [],
+        "grants": [],
+        "thesis_supervisors": [],
+        "publication_type": [],
+        "conference_title": [],
+        "thesis_supervisors-0-name": [],
+        "thesis_supervisors-0-orcid": [],
+        "journal_title": [],
+        "subjects": [],
+        "creators-0-gnd": [],
+        "subjects-0-term": [],
+        "conference_place": [],
+        "creators-0-orcid": [],
+        "contributors-0-name": [],
+        "title": [],
+        "conference_session": [],
+        "partof_pages": [],
+        "contributors-0-gnd": [],
+        "notes": [],
+        "creators-0": [],
+        "subjects-0": [],
+        "imprint_isbn": [],
+        "contributors-0-affiliation": [],
+        "imprint_place": [],
+        "related_identifiers": [],
+        "subjects-0-scheme": [],
+        "contributors-0": [],
+        "related_identifiers-0": [],
+        "keywords": [],
+        "related_identifiers-0-relation": [],
+        "related_identifiers-0-identifier": [],
+        "journal_pages": [],
+        "keywords-0": [],
+        "thesis_supervisors-0": [],
+        "publication_date": [],
+        "conference_url": [],
+        "thesis_supervisors-0-affiliation": []
+      },
+      "values": {
+        "conference_dates": "",
+        "prereserve_doi": {
+          "doi": "10.5281/zenodo.55555",
+          "recid": 55555
+        },
+        "doi": "10.5281/zenodo.55555",
+        "access_conditions": "",
+        "conference_session_part": "",
+        "journal_title": "Some Journal",
+        "partof_title": "",
+        "imprint_publisher": "",
+        "embargo_date": "2016-06-17",
+        "subjects": [
+          {
+            "identifier": "",
+            "scheme": "",
+            "term": ""
+          }
+        ],
+        "references": [],
+        "conference_acronym": "",
+        "description": "<p>Some description.</p>",
+        "imprint_isbn": "",
+        "conference_place": "",
+        "access_right": "open",
+        "title": "TITLE",
+        "conference_session": "",
+        "partof_pages": "",
+        "publication_date": "2016-06-18",
+        "notes": "",
+        "thesis_supervisors": [
+          {
+            "name": "",
+            "affiliation": "",
+            "orcid": "",
+            "gnd": ""
+          }
+        ],
+        "conference_url": "",
+        "contributors": [
+          {
+            "name": "",
+            "affiliation": "",
+            "type": "ContactPerson",
+            "orcid": "",
+            "gnd": ""
+          }
+        ],
+        "communities": [],
+        "imprint_place": "",
+        "related_identifiers": [
+          {
+            "identifier": "",
+            "relation": "isSupplementTo",
+            "scheme": ""
+          }
+        ],
+        "journal_issue": "6",
+        "creators": [
+          {
+            "name": "FirstName1 LastName1 *, FirstName2 LastName2, FirstName3 LastName3, FirstName4 LastName4.",
+            "affiliation": "",
+            "orcid": "",
+            "gnd": ""
+          }
+        ],
+        "publication_type": "article",
+        "license": "cc-by",
+        "journal_pages": "634-637",
+        "journal_volume": "5",
+        "thesis_university": "",
+        "grants": [],
+        "upload_type": "publication",
+        "keywords": [
+          "keyword1, keyword2."
+        ],
+        "conference_title": ""
+      },
+      "completed": true
+    }
+  },
+  "files": [
+    {
+      "size": 50000,
+      "name": "file.pdf",
+      "checksum": "11111111111111111111111111111111",
+      "path": "/path/to/file/file.pdf",
+      "id": "22222222-2222-2222-2222-222222222222"
+    }
+  ],
+  "title": "TITLE"
+}
