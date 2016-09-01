@@ -145,7 +145,7 @@ def load_zenodo_user(data):
 
     nickname = data['nickname'].strip()
     if nickname:
-        safe_username = str(nickname)
+        safe_username = str(nickname.encode('utf-8'))
         idx = 2
         # If necessary, create a safe (non-colliding) username
         while UserProfile.query.filter(
