@@ -22,23 +22,26 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-export DATE=`date "+%Y-%m-%d"`
-export DUMP_DIR=/opt/migrator/$DATE
-mkdir $DUMP_DIR
-cd $DUMP_DIR
-inveniomigrator dump tokens
-inveniomigrator dump clients
-inveniomigrator dump remotetokens
-inveniomigrator dump remoteaccounts
-inveniomigrator dump userexts
-inveniomigrator dump secretlinks
-inveniomigrator dump accessrequests
-inveniomigrator dump featured
-inveniomigrator dump communities
-inveniomigrator dump records --with-json --latest-only
-inveniomigrator dump deposit
-inveniomigrator dump users
-mkdir ./communities
-cp /opt/zenodo/var/invenio.base-instance/static/media/communities/* ./communities/
-cd `dirname $DUMP_DIR`
-tar -czvf $DATE.tar.gz `basename $DUMP_DIR`
+# Loading data
+zenodo db destroy --yes-i-know
+zenodo index destroy --yes-i-know --force
+zenodo db init
+zenodo db create
+zenodo index init
+zenodo fixtures init
+zenodo users create team@zenodo.org -a
+zenodo access allow admin-access -e team@zenodo.org
+zenodo access allow deposit-admin-access -e team@zenodo.org
+
+
+# Load funders and grants
+zenodo openaire loadfunders --source $ZENODO_FIXTURES_DIR/fundref_registry.rdf
+zenodo fixtures loadfp6grants
+zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_fp7_json.sqlite
+zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_h2020_json.sqlite
+zenodo opendefinition loadlicenses
+
+zenodo fixtures loadlicenses
+
+zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz
+# zenodo_pgload $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz
