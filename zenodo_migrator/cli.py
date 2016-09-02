@@ -38,7 +38,7 @@ from invenio_db import db
 from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
-from invenio_pidstore.models import PersistentIdentifier
+from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
 from lxml import etree
@@ -95,10 +95,8 @@ def files():
 
 def get_uuid_from_pid_value(pid_value, pid_type='recid'):
     """Get the UUID of record from pid_value and pid_type."""
-    resolver = Resolver(
-        pid_type=pid_type, object_type='rec', getter=Record.get_record)
-    pid, record = resolver.resolve(pid_value)
-    return str(record.id)
+    pid = PersistentIdentifier.get(pid_type, pid_value)
+    return str(Record.get_record(pid.object_uuid).id)
 
 
 def get_record_uuids(pid_type='recid'):
@@ -225,7 +223,7 @@ def reindex(pid_type=None, uuid=None):
         "Only 'pid_type' or 'uuid' can be provided but not both."
     if pid_type:
         query = (x[0] for x in PersistentIdentifier.query.filter_by(
-            pid_type=pid_type, object_type='rec'
+            pid_type=pid_type, object_type='rec', status=PIDStatus.REGISTERED,
         ).values(
             PersistentIdentifier.object_uuid
         ))
