@@ -77,7 +77,7 @@ for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
 install_requires = [
-    'invenio-migrator>=1.0.0a7.dev20160613',
+    'invenio-migrator>=1.0.0a8',
 ]
 
 packages = find_packages()
