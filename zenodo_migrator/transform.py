@@ -68,6 +68,20 @@ def migrate_record(record_uuid, logger=None):
                 except InclusionRequestExistsError:
                     if logger:
                         logger.warning("Inclusion request exists.")
+        # Register DOI
+        doi = record.get('doi')
+        if doi:
+            is_internal = doi.startswith('10.5281')
+            PersistentIdentifier.create(
+                pid_type='doi',
+                pid_value=doi,
+                pid_provider='datacite' if is_internal else None,
+                object_type='rec',
+                object_uuid=record_uuid,
+                status=(
+                    PIDStatus.REGISTERED if is_internal
+                    else PIDStatus.RESERVED),
+            )
         db.session.commit()
     except NoResultFound:
         if logger:
@@ -103,6 +117,7 @@ def transform_record(record):
         _migrate_provisional_communities,
         _migrate_thesis,
         _add_schema,
+        _add_buckets,
     ]
 
     return reduce(lambda record, func: func(record), transformations, record)
@@ -228,7 +243,6 @@ def _migrate_owners(record):
     record['owners'] = [int(o['id'])] if o.get('id') else []
     record['_internal'] = {
         'source': {
-            'legacy_deposit_id': o.get('deposition_id'),
             'agents': [{
                 'role': 'uploader',
                 'email': o.get('email'),
@@ -236,6 +250,15 @@ def _migrate_owners(record):
                 'user_id': o.get('id'),
             }]
         }
+    }
+    depid = o.get('deposition_id')
+    record['_deposit'] = {
+        'id': str(depid) if depid else "",
+        'pid': {
+            'type': 'recid',
+            'value': str(record['recid']),
+        },
+        'status': 'published',
     }
 
     for k in list(record['_internal']['source']['agents'][0].keys()):
@@ -334,6 +357,16 @@ def _migrate_license(record):
 
 
 def _add_schema(record):
-    """Transform record OAI information."""
+    """Add $schema in record."""
     record['$schema'] = 'https://zenodo.org/schemas/records/record-v1.0.0.json'
+    return record
+
+
+def _add_buckets(record):
+    """Add bucket information in record."""
+    if '_files' in record:
+        if '_buckets' not in record:
+            record['_buckets'] = {}
+        record['_buckets']['record'] = record['_files'][0]['bucket']
+        record['_buckets']['deposit'] = ""
     return record

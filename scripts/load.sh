@@ -67,4 +67,4 @@ zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.deposits_raw.sql.gz
 zenodo migration depositsrun --eager  # Racing condition issues
 
 # Dump migrated deposits
-zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.deposits_migrated.sql
+zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.deposits_migrated.sql.gz
