@@ -247,7 +247,10 @@ def depositsrun(depid=None, uuid=None, eager=None):
                 as records_bar:
             for record_uuid in records_bar:
                 if eager:
-                    migrate_deposit(record_uuid)
+                    try:
+                        migrate_deposit(record_uuid)
+                    except Exception:
+                        click.echo("Failed at {uuid}".format(uuid=record_uuid))
                 else:
                     migrate_deposit.delay(record_uuid)
     elif uuid:

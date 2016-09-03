@@ -28,7 +28,7 @@ from invenio_db import db
 from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
-from invenio_pidstore.errors import PIDDeletedError
+from invenio_pidstore.errors import PIDDeletedError, PIDUnregistered
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
@@ -87,6 +87,9 @@ def migrate_deposit(record_uuid):
             PersistentIdentifier.query.filter_by(
                 pid_type='depid', pid_value=depid).one().delete()
             deposit.delete()
+        except PIDUnregistered:
+            raise Exception("PIDUnregistered for deposit '{uuid}'".format(
+                uuid=record_uuid))
     db.session.commit()
 
 

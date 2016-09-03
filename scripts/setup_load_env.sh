@@ -34,11 +34,22 @@ export ZENODO_PGDUMPS_DIR=$ZENODO_DATA_DIR/pgdumps
 zenodo_pgload()
 {
     ZENODO_DB_SNAPSHOP_FILENAME=$1
-    echo "Loading Zenodo DB snapshot from" $ZENODO_DB_SNAPSHOP_FILENAME
+    echo "Loading archived Zenodo DB snapshot from" $ZENODO_DB_SNAPSHOP_FILENAME
     zenodo db destroy --yes-i-know; zenodo db init; gunzip -c $ZENODO_DB_SNAPSHOP_FILENAME | psql --dbname="${ZENODO_DB_NAME}" --host="${ZENODO_DB_HOST}" --port="${ZENODO_DB_PORT}" --username="${ZENODO_DB_USERNAME}"
 }
 zenodo_pgdump() {
     ZENODO_DB_SNAPSHOP_FILENAME=$1
-    echo "Dumping Zenodo DB snapshot into" $ZENODO_DB_SNAPSHOP_FILENAME
+    echo "Dumping archived Zenodo DB snapshot into" $ZENODO_DB_SNAPSHOP_FILENAME
     pg_dump --dbname="${ZENODO_DB_NAME}" --host="${ZENODO_DB_HOST}" --port="${ZENODO_DB_PORT}" --username="${ZENODO_DB_USERNAME}" | gzip > $ZENODO_DB_SNAPSHOP_FILENAME
+}
+zenodo_pgload_raw()
+{
+    ZENODO_DB_SNAPSHOP_FILENAME=$1
+    echo "Loading raw SQL Zenodo DB snapshot from" $ZENODO_DB_SNAPSHOP_FILENAME
+    zenodo db destroy --yes-i-know; zenodo db init; psql --dbname="${ZENODO_DB_NAME}" --host="${ZENODO_DB_HOST}" --port="${ZENODO_DB_PORT}" --username="${ZENODO_DB_USERNAME}" -f $ZENODO_DB_SNAPSHOP_FILENAME
+}
+zenodo_pgdump_raw() {
+    ZENODO_DB_SNAPSHOP_FILENAME=$1
+    echo "Dumping raw SQL Zenodo DB snapshot into" $ZENODO_DB_SNAPSHOP_FILENAME
+    pg_dump --dbname="${ZENODO_DB_NAME}" --host="${ZENODO_DB_HOST}" --port="${ZENODO_DB_PORT}" --username="${ZENODO_DB_USERNAME}" -f $ZENODO_DB_SNAPSHOP_FILENAME
 }
