@@ -26,6 +26,9 @@
 
 from __future__ import absolute_import, print_function
 
+from copy import deepcopy
+
+from github3.exceptions import AuthenticationFailed
 from invenio_db import db
 from invenio_github.api import GitHubAPI
 from invenio_github.errors import RepositoryAccessError
@@ -36,27 +39,58 @@ from invenio_pidstore.models import PersistentIdentifier
 from sqlalchemy.orm.exc import NoResultFound
 
 
-def migrate_github_remote_account_func(remote_account_id, logger=None):
+def fetch_gh_info(full_repo_name, gh_api):
+    """Fetch the GitHub repository from repository name."""
+    owner, repo_name = full_repo_name.split('/')
+    try:
+        gh_repo = gh_api.repository(owner, repo_name)
+        return (int(gh_repo.id), str(gh_repo.full_name))
+    except AuthenticationFailed as e:
+        pass  # re-try with dev API
+    try:
+        dev_api = GitHubAPI._dev_api()
+        gh_repo = dev_api.repository(owner, repo_name)
+        return (int(gh_repo.id), str(gh_repo.full_name))
+    except AuthenticationFailed:
+        raise
+
+
+def migrate_github_remote_account(gh_db_ra, remote_account_id, logger=None):
     """Migrate the GitHub remote accounts."""
     ra = RemoteAccount.query.filter_by(id=remote_account_id).first()
     for full_repo_name, repo_vals in ra.extra_data['repos'].items():
+        if '/' not in full_repo_name:
+            if logger is not None:
+                logger.warning("Repository migrated: {name} ({id})".format(
+                    name=full_repo_name, id=ra.id))
+            continue
         if repo_vals['hook']:
             owner, repo_name = full_repo_name.split('/')
-            gh_api = GitHubAPI(ra.user.id)
-            gh_repo = gh_api.api.repository(owner, repo_name)
-            if not gh_repo:  # Repository does not exist
-                continue
+            # If repository name is cached, get from database, otherwise fetch
+            if full_repo_name in gh_db_ra:
+                gh_id, gh_full_name = gh_db_ra[full_repo_name]
+            else:
+                gh_api = GitHubAPI(ra.user.id)
+                gh_id, gh_full_name = fetch_gh_info(full_repo_name, gh_api.api)
+
             try:
-                repo = Repository.get(user_id=ra.user_id, github_id=gh_repo.id,
-                                      name=gh_repo.full_name)
+                repo = Repository.get(user_id=ra.user_id, github_id=gh_id,
+                                      name=gh_full_name)
             except NoResultFound:
-                repo = Repository.create(user_id=ra.user_id,
-                                         github_id=gh_repo.id,
-                                         name=gh_repo.full_name)
+                repo = Repository.create(user_id=ra.user_id, github_id=gh_id,
+                                         name=gh_full_name)
             except RepositoryAccessError as e:
-                if logger:
-                    logger.exception(
-                        'Repository has been already claimed by another user.')
+                if logger is not None:
+
+                    repo = Repository.query.filter_by(github_id=gh_id).one()
+                    logger.warning(
+                        "User (uid: {user_id}) repository "
+                        "'{repo_name}' from remote account ID:{ra_id} has "
+                        "already been claimed by another user ({user2_id})."
+                        "Repository ID: {repo_id}.".format(
+                            user_id=ra.user.id, repo_name=full_repo_name,
+                            ra_id=ra.id, user2_id=repo.user_id,
+                            repo_id=repo.id))
                 continue
                 # TODO: Hook for this user will not be added.
             repo.hook = repo_vals['hook']
@@ -78,10 +112,67 @@ def migrate_github_remote_account_func(remote_account_id, logger=None):
                             # TODO: Update the date dep['submitted']
                             db.session.add(release)
                     except PIDDoesNotExistError as e:
-                        if logger:
+                        if logger is not None:
                             logger.exception(
                                 'Could not create release {tag} for repository'
                                 ' {repo_id}, because corresponding PID: {pid} '
                                 'does not exist')
                         raise e
     db.session.commit()
+
+
+def update_local_gh_db(gh_db, remote_account_id, logger=None):
+    """Fetch the missing GitHub repositories (from RemoteAccount information).
+
+    :param gh_db: mapping from remote accounts information to github IDs.
+    :type gh_db: dict
+    :param dst_path: Path to destination file.
+    :type dst_path: str
+    :param remote_account_id: Specify a single remote account ID to update.
+    :type remote_account_id: int
+
+    Updates the local GitHub repository name mapping (``gh_db``) with the
+    missing entries from RemoteAccount query.
+
+    The exact structure of the ``gh_db`` dictionary is as follows:
+    gh_db[remote_account_id:str][repository_name:str] = (id:int, name:str)
+    E.g.:
+        gh_db = {
+          "1234": {
+            "johndoe/repo1": (123456, "johndoe/repo1"),
+            "johndoe/repo2": (132457, "johndoe/repo2")
+          },
+          "2345": {
+            "janedoe/janesrepo1": (123458, "janedoe/repo1"),
+            "DoeOrganization/code1234": (123459, "DoeOrganization/code1234")
+          }
+          "3456": {}  # No active repositories for this remote account.
+        }
+    """
+    gh_db = deepcopy(gh_db)
+    if remote_account_id:
+        gh_ras = [RemoteAccount.query.filter_by(id=remote_account_id).one(), ]
+    else:
+        gh_ras = [ra for ra in RemoteAccount.query.all()
+                  if 'repos' in ra.extra_data]
+    for ra in gh_ras:
+        gh_db.setdefault(str(ra.id), dict())
+        repos = ra.extra_data['repos'].items()
+        gh_api = GitHubAPI(ra.user.id)
+        for full_repo_name, repo_vals in repos:
+            if '/' not in full_repo_name:
+                if logger is not None:
+                    logger.warning("Repository migrated: {name} ({id})".format(
+                        name=full_repo_name, id=ra.id))
+                continue
+            if not repo_vals['hook']:
+                continue
+            if full_repo_name not in gh_db[str(ra.id)]:
+                try:
+                    repo_info = fetch_gh_info(full_repo_name, gh_api.api)
+                    gh_db[str(ra.id)][full_repo_name] = repo_info
+                except Exception as e:
+                    if logger is not None:
+                        logger.exception("GH fail: {name} ({id}): {e}".format(
+                            name=full_repo_name, id=ra.id, e=e))
+    return gh_db

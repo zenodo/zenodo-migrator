@@ -21,6 +21,7 @@
 
 from __future__ import absolute_import
 
+import six
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from invenio_accounts.models import User
@@ -36,7 +37,7 @@ from zenodo.modules.deposit.api import ZenodoDeposit
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
-from .github import migrate_github_remote_account_func
+from .github import migrate_github_remote_account
 from .transform import migrate_record as migrate_record_func
 
 logger = get_task_logger(__name__)
@@ -94,9 +95,9 @@ def migrate_deposit(record_uuid):
 
 
 @shared_task(ignore_results=True)
-def migrate_github_remote_account(remote_account_id):
+def migrate_github_task(gh_db_ra, remote_account_id):
     """Migrate GitHub remote account."""
-    migrate_github_remote_account_func(remote_account_id, logger=logger)
+    migrate_github_remote_account(gh_db_ra, remote_account_id, logger=logger)
 
 
 @shared_task()
@@ -148,7 +149,7 @@ def load_zenodo_user(data):
 
     nickname = data['nickname'].strip()
     if nickname:
-        safe_username = str(nickname.encode('utf-8'))
+        safe_username = str(nickname.encode('utf-8')) if six.PY2 else nickname
         idx = 2
         # If necessary, create a safe (non-colliding) username
         while UserProfile.query.filter(

@@ -39,14 +39,13 @@ from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
-from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
 
+from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_secretlink, load_zenodo_user, \
-    migrate_deposit, migrate_files, migrate_github_remote_account, \
-    migrate_record
+    migrate_deposit, migrate_files, migrate_github_task, migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -273,23 +272,44 @@ def github_update_client_id(old_client_id, new_client_id):
 
 
 @migration.command()
+@click.option('--gh-db', '-g', type=click.File('r'), default=None)
 @click.option('--remoteaccountid', '-i')
 @with_appcontext
-def githubrun(remoteaccountid):
+def githubrun(gh_db, remoteaccountid):
     """Run GitHub remote accounts data migration.
 
     Example:
-       zenodo migration -i 1000
+       zenodo migration githubrun -i 1000 -g gh_db.json
     """
+    gh_db = json.load(gh_db) if gh_db is not None else {}
     if remoteaccountid:  # If specified, run for only one remote account
-        migrate_github_remote_account(remoteaccountid)
+        migrate_github_remote_account(gh_db[str(remoteaccountid)],
+                                      remoteaccountid)
     else:
-        gh_remote_accounts = [ra for ra in RemoteAccount.query.all()
-                              if 'repos' in ra.extra_data]
-        click.echo("Sending {0} tasks ...".format(len(gh_remote_accounts)))
-        with click.progressbar(gh_remote_accounts) as gh_remote_accounts_bar:
-            for gh_remote_account in gh_remote_accounts_bar:
-                migrate_github_remote_account.delay(gh_remote_account.id)
+        gh_remote_account_ids = [ra.id for ra in RemoteAccount.query.all()
+                                 if 'repos' in ra.extra_data]
+        click.echo("Sending {0} tasks ...".format(len(gh_remote_account_ids)))
+        with click.progressbar(gh_remote_account_ids) as gh_ra_bar:
+            for gh_remote_account_id in gh_ra_bar:
+                try:
+                    migrate_github_task.s(
+                        gh_db[str(gh_remote_account_id)],
+                        gh_remote_account_id).apply(throw=True)
+                except Exception as e:
+                    click.echo("Failed to migrate RA {ra_id} {e}".format(
+                        ra_id=gh_remote_account_id, e=e))
+
+
+@migration.command()
+@click.argument('destination', type=click.File('w'))
+@click.option('--src', '-s', type=click.File('r'), default=None)
+@click.option('--remote-account-id', '-i')
+@with_appcontext
+def github_update_local_db(destination, src, remote_account_id):
+    """Update the local GitHub name-to-ID mapping database."""
+    gh_db = json.load(src) if src is not None else {}
+    new_gh_db = update_local_gh_db(gh_db, remote_account_id)
+    json.dump(new_gh_db, destination, indent=2, sort_keys=True)
 
 
 @migration.command()

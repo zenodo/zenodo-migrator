@@ -51,6 +51,7 @@ extras_require = {
     ],
     'tests': tests_require,
     'loader': [
+        'six>=1.10.0'
         'celery>=3.1.19',
         'Flask>=0.11.1',
         'Flask-CeleryExt>=0.2.0',

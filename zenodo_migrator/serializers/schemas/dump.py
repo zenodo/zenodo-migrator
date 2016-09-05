@@ -226,7 +226,6 @@ class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
         metadata.pop('modification_date', None)
         metadata.pop('recid', None)
         metadata.pop('version_id', None)
-        # import ipdb; ipdb.set_trace()
 
         for k, fun in empty_keys.items():
             if k in metadata.keys():

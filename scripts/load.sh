@@ -68,3 +68,14 @@ zenodo migration depositsrun --eager  # Racing condition issues
 
 # Dump migrated deposits
 zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.deposits_migrated.sql.gz
+
+## NOTE: If necessary, change the OAuth application's client ID
+ZENODO_GH_ID="abcdefghij1234567890"
+ZENODO_NEW_GH_ID="1234567890abcdefghij"
+zenodo migration github_update_client_id ${ZENODO_GH_ID} ${ZENODO_NEW_GH_ID}
+
+## NOTE: Update the offline GH database with name mappings
+zenodo migration github_update_local_db ${ZENODO_FIXTURES_DIR}/gh_db.json --src ${ZENODO_FIXTURES_DIR}/gh_db.json
+
+# Migrate the GitHub remote accounts data
+zenodo migration githubrun -g ${ZENODO_FIXTURES_DIR}/gh_db.json
