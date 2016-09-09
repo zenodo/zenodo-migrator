@@ -215,19 +215,27 @@ def cleandump(source, output, drop_marcxml=False):
 @migration.command()
 @click.option('--pid_type', '-t')
 @click.option('--uuid', '-u')
+@click.option('--depid', '-d')
 @with_appcontext
-def reindex(pid_type=None, uuid=None):
+def reindex(pid_type=None, uuid=None, depid=None):
     """Load a JSON dump for Zenodo."""
     assert not (pid_type is not None and uuid is not None), \
         "Only 'pid_type' or 'uuid' can be provided but not both."
     if pid_type:
-        query = (x[0] for x in PersistentIdentifier.query.filter_by(
-            pid_type=pid_type, object_type='rec', status=PIDStatus.REGISTERED,
-        ).values(
-            PersistentIdentifier.object_uuid
-        ))
-        click.echo("Sending tasks...")
-        RecordIndexer().bulk_index(query)
+        if depid:
+            dep_uuid = PersistentIdentifier.query.filter_by(
+                pid_type=pid_type,
+                pid_value=str(depid)).one().get_assigned_object()
+            RecordIndexer().index_by_id(dep_uuid)
+        else:
+            query = (x[0] for x in PersistentIdentifier.query.filter_by(
+                pid_type=pid_type, object_type='rec',
+                status=PIDStatus.REGISTERED,
+            ).values(
+                PersistentIdentifier.object_uuid
+            ))
+            click.echo("Sending tasks...")
+            RecordIndexer().bulk_index(query)
     elif uuid:
         RecordIndexer().index_by_id(uuid)
 
@@ -248,8 +256,9 @@ def depositsrun(depid=None, uuid=None, eager=None):
                 if eager:
                     try:
                         migrate_deposit(record_uuid)
-                    except Exception:
-                        click.echo("Failed at {uuid}".format(uuid=record_uuid))
+                    except Exception as e:
+                        click.echo(" Failed at {uuid}: {e}".format(
+                            uuid=record_uuid, e=e))
                 else:
                     migrate_deposit.delay(record_uuid)
     elif uuid:

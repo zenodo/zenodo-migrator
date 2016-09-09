@@ -32,6 +32,7 @@ from functools import reduce
 from flask import current_app
 from invenio_records.api import Record
 from werkzeug.local import LocalProxy
+from zenodo.modules.deposit.api import ZenodoDeposit
 
 from .loaders import legacyjsondump_v1_translator
 
@@ -60,11 +61,14 @@ def _migrate_recid(d, logger):
         if len(set(recids)) == 1:
             recid = recids[0]
             d['_n']['recid'] = recid
-            recid_pid = {
-                'type': 'recid',
-                'value': str(recid)
-            }
-            d['_n']['_deposit'].setdefault('pid', recid_pid)
+
+            # If it has been submitted, add the pid to '_deposit'
+            if d['_p']['submitted']:
+                recid_pid = {
+                    'type': 'recid',
+                    'value': str(recid)
+                }
+                d['_n']['_deposit'].setdefault('pid', recid_pid)
         elif not recids:
             logger.error("Deposit {depid} has SIPs but no recids!".format(
                 depid=d['_p']['id']))
@@ -81,10 +85,14 @@ def _finalize(d, logger):
     d['_n'].setdefault('$schema', current_jsonschemas.path_to_url(
         current_app.config['DEPOSIT_DEFAULT_JSONSCHEMA']
     ))
-    # TODO: Migrate the original creation date
-    # created = d['_p']['created']  # TODO: convert to datetime!
     d = Record(d['_n'], model=d.model)
-    # d.model.created = created
+
+    # Try to set correct revision ID for deposits with record
+    try:
+        rec_pid, rec = ZenodoDeposit(d, d.model).fetch_published()
+        d['_deposit']['pid']['revision_id'] = rec.revision_id
+    except Exception:
+        pass
     return d
 
 
@@ -140,6 +148,14 @@ def _migrate_draft(d, logger):
     d['_n']['_deposit']['status'] = 'draft'
     draft_type, draft = list(d['drafts'].items())[0]
     draft_v = draft['values']
+
+    # if in 'draft', try to fill in 'doi' and 'recid' too from 'prereserve_doi'
+    if 'prereserve_doi' in draft_v:
+        pre = draft_v['prereserve_doi']
+        if 'doi' in pre and pre['doi']:
+            d['_n']['doi'] = pre['doi']
+        if 'recid' in pre and pre['recid']:
+            d['_n']['recid'] = pre['recid']
 
     draft_metadata = legacyjsondump_v1_translator(dict(metadata=draft_v))
     d['_n'].update(draft_metadata)

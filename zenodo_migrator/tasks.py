@@ -79,6 +79,9 @@ def migrate_deposit(record_uuid):
         try:
             rec_pid, record = zenodo_deposit.fetch_published()
             record['_deposit'] = dict(zenodo_deposit['_deposit'])
+            # It is safe to assume that record's '_deposit.status' will always
+            # be published.
+            record['_deposit']['status'] = 'published'
             record.commit()
         except PIDDeletedError:
             # If record has been deleted, delete the deposit PID and
