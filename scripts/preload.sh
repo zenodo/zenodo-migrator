@@ -24,15 +24,12 @@
 
 # Loading data
 zenodo db destroy --yes-i-know
-zenodo index destroy --yes-i-know --force
 zenodo db init
 zenodo db create
-zenodo index init
 zenodo fixtures init
 zenodo users create team@zenodo.org -a
 zenodo access allow admin-access -e team@zenodo.org
 zenodo access allow deposit-admin-access -e team@zenodo.org
-
 
 # Load funders and grants
 zenodo openaire loadfunders --source $ZENODO_FIXTURES_DIR/fundref_registry.rdf
@@ -40,8 +37,7 @@ zenodo fixtures loadfp6grants
 zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_fp7_json.sqlite
 zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_h2020_json.sqlite
 zenodo opendefinition loadlicenses
-
 zenodo fixtures loadlicenses
 
-zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz
+# zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz
 # zenodo_pgload $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz

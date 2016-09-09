@@ -23,7 +23,6 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 zenodo index init
-
 zenodo migration reindex -t od_lic
 zenodo migration reindex -t frdoi
 zenodo migration reindex -t grant

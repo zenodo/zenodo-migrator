@@ -98,6 +98,7 @@ class DumpLegacyMetadataSchemaV1(LegacyMetadataSchemaV1):
     alternate_identifiers = fields.Nested(DumpAlternateIdentifierV1, many=True)
     title = TrimmedString(required=True, validate=validate.Length(min=1))
     description = SanitizedHTML(required=True, validate=validate.Length(min=1))
+    conference_url = fields.String(attribute='meeting.url')
     doi = fields.String()
 
 

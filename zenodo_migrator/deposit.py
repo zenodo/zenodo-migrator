@@ -59,7 +59,7 @@ def _migrate_recid(d, logger):
         recids = [int(sip['metadata']['recid']) for sip in sips]
         if len(set(recids)) == 1:
             recid = recids[0]
-            d['_n']['_deposit']['recid'] = recid
+            d['_n']['recid'] = recid
             recid_pid = {
                 'type': 'recid',
                 'value': str(recid)
@@ -109,7 +109,7 @@ def _migrate_internal(d, *args):
     if '_files' in d:
         d['_n']['_files'] = deepcopy(d['_files'])
     if '_buckets' in d:
-        d['_n']['_buckets'] = deepcopy(d['_bucket'])
+        d['_n']['_buckets'] = deepcopy(d['_buckets'])
     return d
 
 
