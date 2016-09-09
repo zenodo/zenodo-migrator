@@ -30,7 +30,7 @@ from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
 from invenio_pidstore.errors import PIDDeletedError, PIDUnregistered
-from invenio_pidstore.models import PersistentIdentifier
+from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
 from zenodo.modules.deposit.api import ZenodoDeposit
@@ -92,8 +92,13 @@ def migrate_deposit(record_uuid):
                 pid_type='depid', pid_value=depid).one().delete()
             deposit.delete()
         except PIDUnregistered:
-            raise Exception("PIDUnregistered for deposit '{uuid}'".format(
-                uuid=record_uuid))
+            recid = str(zenodo_deposit['recid'])
+            pid = PersistentIdentifier.query.filter_by(
+                    pid_type='recid', pid_value=recid).one()
+            # PIDUnregistered can mean 'reserved' PID, which is OK
+            if pid.status != PIDStatus.RESERVED:
+                raise Exception("PID status:{st} for deposit '{uuid}'".format(
+                    st=pid.status, uuid=record_uuid))
     db.session.commit()
 
 
