@@ -23,21 +23,26 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 # Loading data
+date
 zenodo db destroy --yes-i-know
 zenodo db init
 zenodo db create
 zenodo fixtures init
-zenodo users create team@zenodo.org -a
-zenodo access allow admin-access -e team@zenodo.org
-zenodo access allow deposit-admin-access -e team@zenodo.org
-
-# Load funders and grants
-zenodo openaire loadfunders --source $ZENODO_FIXTURES_DIR/fundref_registry.rdf
 zenodo fixtures loadfp6grants
-zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_fp7_json.sqlite
-zenodo openaire loadgrants --source ${ZENODO_FIXTURES_DIR}/openaire_grants_h2020_json.sqlite
+zenodo index destroy --yes-i-know --force
+zenodo index init
+zenodo openaire loadfunders --source /opt/zenodo/lib/python2.7/site-packages/invenio_openaire/data/fundref_registry.rdf
+zenodo openaire loadgrants --setspec=FP7Projects
+zenodo openaire loadgrants --setspec=H2020Projects
 zenodo opendefinition loadlicenses
+date
+
 zenodo fixtures loadlicenses
+
+zenodo migration reindex -t od_lic
+zenodo migration reindex -t frdoi
+zenodo migration reindex -t grant
+zenodo index run -c 8 -d
 
 # zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz
 # zenodo_pgload $ZENODO_PGDUMPS_DIR/zenodo.preload.sql.gz

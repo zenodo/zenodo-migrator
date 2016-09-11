@@ -23,6 +23,9 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 # Load special CLI for Zenodo users loading with name collision resolving
+export ZENODO_DUMPS_DIR=/opt/migrator/2016-09-12
+export ZENODO_FIXTURES_DIR=/opt/migrator
+date
 zenodo dumps loadusers_zenodo ${ZENODO_DUMPS_DIR}/users_dump_*.json
 zenodo dumps loadclients ${ZENODO_DUMPS_DIR}/clients_dump_*
 zenodo dumps loadtokens ${ZENODO_DUMPS_DIR}/tokens_dump_*
@@ -31,31 +34,32 @@ zenodo dumps loadremotetokens ${ZENODO_DUMPS_DIR}/remotetokens_dump_*.json
 zenodo dumps loaduserexts ${ZENODO_DUMPS_DIR}/userexts_dump_*.json
 zenodo dumps loadsecretlinks ${ZENODO_DUMPS_DIR}/secretlinks_dump_*.json
 zenodo dumps loadaccessrequests ${ZENODO_DUMPS_DIR}/accessrequests_dump_*.json
-zenodo dumps loadcommunities ${ZENODO_DUMPS_DIR}/communities_dump_*.json ${ZENODO_DUMPS_DIR}/communities/
-zenodo dumps loadfeatured ${ZENODO_DUMPS_DIR}/featured_dump_*.json
-
-# Disable temporary user.
-zenodo users deactivate team@zenodo.org
-# Grant to existing users.
 zenodo access allow admin-access -e info@zenodo.org
 zenodo access allow deposit-admin-access -e info@zenodo.org
 zenodo access allow admin-access -e lars.holm.nielsen@cern.ch
 zenodo access allow deposit-admin-access -e lars.holm.nielsen@cern.ch
+date
+zenodo dumps loadcommunities ${ZENODO_DUMPS_DIR}/communities_dump_*.json ${ZENODO_DUMPS_DIR}/communities/
+zenodo dumps loadfeatured ${ZENODO_DUMPS_DIR}/featured_dump_*.json
 
 # Dump pre-records
 zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.prerecords.sql.gz
 
 # Load records dump
 zenodo dumps loadrecords -t json ${ZENODO_DUMPS_DIR}/records_dump_*.json
+# Wait for all taskes to be processes - http://zenodo-mq1.cern.ch:15672/#/
 
 # Dump raw records
 zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.records_raw.sql.gz
+zenodo_pgload $ZENODO_PGDUMPS_DIR/zenodo.records_raw.sql.gz
 
 # Migrate records
 zenodo migration recordsrun
+# Wait for all taskes to be processes - http://zenodo-mq1.cern.ch:15672/#/
 
 # Dump migrated records
 zenodo_pgdump $ZENODO_PGDUMPS_DIR/zenodo.records_migrated.sql.gz
+zenodo_pgload $ZENODO_PGDUMPS_DIR/zenodo.records_migrated.sql.gz
 
 # Load deposits dump
 zenodo dumps loaddeposit ${ZENODO_DUMPS_DIR}/deposit_dump_*.json

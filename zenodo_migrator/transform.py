@@ -240,14 +240,15 @@ def _migrate_owners(record):
     o = record['owner']
     del record['owner']
 
-    record['owners'] = [int(o['id'])] if o.get('id') else []
+    owner_id = int(o['id']) if o.get('id') else None
+    record['owners'] = [owner_id] if owner_id else []
     record['_internal'] = {
         'source': {
             'agents': [{
                 'role': 'uploader',
                 'email': o.get('email'),
                 'username': o.get('username'),
-                'user_id': o.get('id'),
+                'user_id': str(owner_id),
             }]
         }
     }
@@ -258,8 +259,11 @@ def _migrate_owners(record):
             'type': 'recid',
             'value': str(record['recid']),
         },
+        'owners': record['owners'],
         'status': 'published',
     }
+    if owner_id:
+        record['_deposit']['created_by'] = owner_id
 
     for k in list(record['_internal']['source']['agents'][0].keys()):
         if not record['_internal']['source']['agents'][0][k]:

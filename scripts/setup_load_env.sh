@@ -25,7 +25,7 @@
 export APP_SQLALCHEMY_DATABASE_URI="postgresql://zenodo:zenodo@localhost/zenodo"
 export ZENODO_DB_HOST="localhost"
 export ZENODO_DB_NAME="zenodo"
-export ZENODO_DB_USERNAME="zenodo"
+export ZENODO_DB_USERNAME=`whoami`
 export ZENODO_DB_PORT="5432"
 export ZENODO_DATA_DIR=$HOME/src/zenodo-datamigration
 export ZENODO_DUMPS_DIR=$ZENODO_DATA_DIR/dumps

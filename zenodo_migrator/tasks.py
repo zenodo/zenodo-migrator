@@ -68,37 +68,8 @@ def migrate_deposit(record_uuid):
     :type record_uuid: str
     """
     # Get the deposit
-    deposit = Record.get_record(record_uuid)
-    new_deposit = transform_deposit(deposit, logger=logger)
-
-    new_deposit.commit()
-    # If deposit has a record, either add the '_deposit' info or remove deposit
-    # if the record was deleted.
-    if '_deposit' in new_deposit and 'pid' in new_deposit['_deposit']:
-        zenodo_deposit = ZenodoDeposit(new_deposit, model=new_deposit.model)
-        try:
-            rec_pid, record = zenodo_deposit.fetch_published()
-            record['_deposit'] = dict(zenodo_deposit['_deposit'])
-            # It is safe to assume that record's '_deposit.status' will always
-            # be published.
-            record['_deposit']['status'] = 'published'
-            record.commit()
-        except PIDDeletedError:
-            # If record has been deleted, delete the deposit PID and
-            # the deposit record.
-            deposit = Record.get_record(record_uuid)
-            depid = deposit['_deposit']['id']
-            PersistentIdentifier.query.filter_by(
-                pid_type='depid', pid_value=depid).one().delete()
-            deposit.delete()
-        except PIDUnregistered:
-            recid = str(zenodo_deposit['recid'])
-            pid = PersistentIdentifier.query.filter_by(
-                    pid_type='recid', pid_value=recid).one()
-            # PIDUnregistered can mean 'reserved' PID, which is OK
-            if pid.status != PIDStatus.RESERVED:
-                raise Exception("PID status:{st} for deposit '{uuid}'".format(
-                    st=pid.status, uuid=record_uuid))
+    deposit = transform_deposit(Record.get_record(record_uuid))
+    deposit.commit()
     db.session.commit()
 
 
