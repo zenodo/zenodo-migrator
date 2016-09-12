@@ -322,6 +322,22 @@ def github_update_local_db(destination, src, remote_account_id):
 
 
 @migration.command()
+@click.argument('logos_dir', type=click.Path(exists=True), default=None)
+@with_appcontext
+def load_communities_logos(logos_dir):
+    """Load communities."""
+    from invenio_communities.models import Community
+    from invenio_communities.utils import save_and_validate_logo
+    from os.path import join, isfile
+    for c in Community.query.all():
+        logo_path = join(logos_dir, "{0}.{1}".format(c.id, c.logo_ext))
+        if isfile(logo_path):
+            with open(logo_path, 'rb') as fp:
+                save_and_validate_logo(fp, logo_path, c.id)
+    db.session.commit()
+
+
+@migration.command()
 @with_appcontext
 def wait():
     """Wait for Celery tasks to finish."""
