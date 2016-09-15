@@ -33,9 +33,7 @@ from flask import current_app
 from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus, \
     RecordIdentifier
-from invenio_records.api import Record
 from werkzeug.local import LocalProxy
-from zenodo.modules.deposit.api import ZenodoDeposit
 
 from .loaders import legacyjsondump_v1_translator
 

@@ -32,7 +32,7 @@ from invenio_records.api import Record
 from zenodo_migrator.deposit import transform_deposit
 
 
-def test_deposits_transform(app, db, deposit_dump):
+def DISABLED_test_deposits_transform(app, db, deposit_dump):
     """Test deposit transformation."""
 
     deposit_dump = [deposit_dump[6]]

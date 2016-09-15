@@ -35,6 +35,7 @@ import click
 from celery.task.control import inspect
 from flask_cli import with_appcontext
 from invenio_db import db
+from invenio_github.api import GitHubAPI
 from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
@@ -322,6 +323,25 @@ def github_update_local_db(destination, src, remote_account_id):
 
 
 @migration.command()
+@with_appcontext
+def github_sync_old_remoteaccounts():
+    """Synchronize the GitHub's remote account extra_data."""
+    def not_fetched(ra):
+        repos = ra.extra_data['repos']
+        return any(('/' in repo_name) for repo_name, _ in repos.items())
+    ras = RemoteAccount.query.all()
+    ras = [ra for ra in ras if 'repos' in ra.extra_data and not_fetched(ra)]
+    with click.progressbar(ras) as gh_ra_bar:
+        for ra in gh_ra_bar:
+            try:
+                GitHubAPI(ra.user_id).sync(hooks=False)
+                db.session.commit()
+            except Exception as e:
+                click.echo("Failed for user {0}. Error: {1}".format(ra.user_id,
+                                                                    e))
+
+
+@migration.command()
 @click.argument('logos_dir', type=click.Path(exists=True), default=None)
 @with_appcontext
 def load_communities_logos(logos_dir):
@@ -335,6 +355,44 @@ def load_communities_logos(logos_dir):
             with open(logo_path, 'rb') as fp:
                 save_and_validate_logo(fp, logo_path, c.id)
     db.session.commit()
+
+
+@migration.command()
+@click.argument('releases_file', type=click.File('r'))
+@with_appcontext
+def load_github_releases(releases_file):
+    """Load GitHub releases information.
+
+    Updates the missing releases and the submission dates.
+    """
+    from invenio_github.models import Release, Repository, ReleaseStatus
+    import arrow
+    import json
+    releases_db = json.load(releases_file)
+    with click.progressbar(releases_db) as releases:
+        for release in releases:
+            repo_name, new_repo_name, gh_repo_id, ra_id, user_id, dep = release
+            repo = Repository.query.filter_by(github_id=gh_repo_id).first()
+            if not repo:
+                repo = Repository.create(user_id=user_id, github_id=gh_repo_id,
+                                         name=new_repo_name)
+            pid = PersistentIdentifier.get(pid_type='recid',
+                                           pid_value=str(dep['record_id']))
+            rel = Release.query.filter_by(
+                repository_id=repo.id,
+                record_id=pid.get_assigned_object()).first()
+            created = arrow.get(dep['submitted']).datetime
+            if rel:
+                rel.created = created
+            else:
+                rel = Release(tag=dep['github_ref'],
+                              errors=dep['errors'],
+                              record_id=pid.get_assigned_object(),
+                              repository_id=repo.id,
+                              status=ReleaseStatus.PUBLISHED,
+                              created=created)
+                db.session.add(rel)
+        db.session.commit()
 
 
 @migration.command()
