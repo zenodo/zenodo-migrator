@@ -366,14 +366,16 @@ def load_github_releases(releases_file):
     Updates the missing releases and the submission dates.
     """
     from invenio_github.models import Release, Repository, ReleaseStatus
+    from sqlalchemy.orm.exc import NoResultFound
     import arrow
     import json
     releases_db = json.load(releases_file)
     with click.progressbar(releases_db) as releases:
         for release in releases:
             repo_name, new_repo_name, gh_repo_id, ra_id, user_id, dep = release
-            repo = Repository.query.filter_by(github_id=gh_repo_id).first()
-            if not repo:
+            try:
+                repo = Repository.query.filter_by(github_id=gh_repo_id).one()
+            except NoResultFound:
                 repo = Repository.create(user_id=user_id, github_id=gh_repo_id,
                                          name=new_repo_name)
             pid = PersistentIdentifier.get(pid_type='recid',
@@ -381,7 +383,7 @@ def load_github_releases(releases_file):
             rel = Release.query.filter_by(
                 repository_id=repo.id,
                 record_id=pid.get_assigned_object()).first()
-            created = arrow.get(dep['submitted']).datetime
+            created = arrow.get(dep['submitted']).datetime.replace(tzinfo=None)
             if rel:
                 rel.created = created
             else:
