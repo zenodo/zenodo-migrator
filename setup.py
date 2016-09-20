@@ -146,6 +146,7 @@ setup(
         ],
         'invenio_migrator.things': [
             'accessrequests = zenodo_migrator.legacy.accessrequests',
+            'pids = zenodo_migrator.legacy.pids',
             'secretlinks = zenodo_migrator.legacy.secretlinks',
         ],
     },

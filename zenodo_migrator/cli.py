@@ -398,6 +398,101 @@ def load_github_releases(releases_file):
 
 
 @migration.command()
+@click.argument('summary_file', type=click.File('w'))
+@click.argument('sources', type=click.File('r'), nargs=-1)
+@with_appcontext
+def load_dois(summary_file, sources):
+    """Load Zenodo DOIs."""
+    from sqlalchemy.orm.exc import NoResultFound
+    import arrow
+    dois = []
+    click.echo("Loading DOI dumps.")
+    with click.progressbar(sources) as fps:
+        for fp in fps:
+            dois.extend(json.load(fp))
+    test_dois = list(p for p in dois if p['pid_value'].startswith('10.5072'))
+    prod_dois = list(p for p in dois if p['pid_value'].startswith('10.5281'))
+    click.echo("Test DOIs: {0}, Prod DOIs: {1}".format(
+        len(test_dois), len(prod_dois)))
+    existing_prod_dois = []
+    missing_prod_dois = []
+    missing_prod_recids = []
+    click.echo("Loading Production DOIs.")
+    with click.progressbar(prod_dois) as prod_dois_bar:
+        for prod_doi in prod_dois_bar:
+            created = arrow.get(prod_doi['created']).datetime.replace(
+                tzinfo=None)
+            try:
+                doi = PersistentIdentifier.query.filter_by(
+                    pid_value=prod_doi['pid_value'], pid_type='doi').one()
+            except NoResultFound as e:
+                doi = None
+            if doi:
+                # Update the DOI timestamp
+                existing_prod_dois.append((prod_doi, str(doi.status)))
+                doi.created = created
+                db.session.commit()
+            else:
+                try:
+                    recid = PersistentIdentifier.query.filter_by(
+                        pid_value=prod_doi['object_value'],
+                        pid_type='recid').one()
+                except NoResultFound as e:
+                    recid = None
+                if recid:
+                    # Create a DOI with prod_doi data and recid's UUID
+                    missing_prod_dois.append((prod_doi, str(recid.status)))
+                    new_doi = PersistentIdentifier.create(
+                        pid_type='doi', pid_value=prod_doi['pid_value'],
+                        object_uuid=recid.get_assigned_object(),
+                        object_type=prod_doi['object_type'])
+                    new_doi.created = created
+                    new_doi.status = PIDStatus(prod_doi['status'])
+                    db.session.commit()
+                else:
+                    missing_prod_recids.append(prod_doi)
+    click.echo("Existing: {0}, Recid-resolved: {1}, Missing: {2}".format(
+        len(existing_prod_dois), len(missing_prod_dois),
+        len(missing_prod_recids)))
+    click.echo("Loading Test DOIs.")
+    redirected_test_dois = []
+    missing_test_dois = []
+    with click.progressbar(test_dois) as test_dois_bar:
+        for test_doi in test_dois_bar:
+            created = arrow.get(prod_doi['created']).datetime.replace(
+                tzinfo=None)
+            prod_doi_value = "10.5281/zenodo.{0}".format(
+                test_doi['object_value'])
+            try:
+                doi = PersistentIdentifier.query.filter_by(
+                    pid_value=prod_doi_value, pid_type='doi').one()
+            except NoResultFound as e:
+                doi = None
+            if doi:
+                # Create a test DOI and redirect
+                new_doi = PersistentIdentifier.create(
+                    pid_type='doi', pid_value=test_doi['pid_value'],
+                    status=PIDStatus.REGISTERED)
+                new_doi.created = created
+                new_doi.redirect(doi)
+                db.session.commit()
+                redirected_test_dois.append((test_doi, str(doi.status)))
+            else:
+                missing_test_dois.append(test_doi)
+    click.echo("Redirected: {0}, Missing: {1}".format(
+        len(redirected_test_dois), len(missing_test_dois)))
+    summary = {
+        'existing_prod_dois': existing_prod_dois,
+        'missing_prod_dois': missing_prod_dois,
+        'missing_prod_recids': missing_prod_recids,
+        'redirected_test_dois': redirected_test_dois,
+        'missing_test_dois': missing_test_dois,
+    }
+    click.echo("Writing summary.")
+    json.dump(summary, summary_file, indent=2)
+
+
+@migration.command()
 @with_appcontext
 def wait():
     """Wait for Celery tasks to finish."""
