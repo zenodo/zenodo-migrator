@@ -45,8 +45,9 @@ from lxml import etree
 from six import StringIO
 
 from .github import migrate_github_remote_account, update_local_gh_db
-from .tasks import load_accessrequest, load_secretlink, load_zenodo_user, \
-    migrate_deposit, migrate_files, migrate_github_task, migrate_record
+from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
+    load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
+    migrate_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -490,6 +491,26 @@ def load_dois(summary_file, sources):
     }
     click.echo("Writing summary.")
     json.dump(summary, summary_file, indent=2)
+
+
+@migration.command()
+@click.option('--eager', '-e', is_flag=True, default=False)
+@with_appcontext
+def update_oaiids(eager):
+    """Update OAI IDs in the records."""
+    pids = PersistentIdentifier.query.filter(
+        PersistentIdentifier.pid_type == 'recid',
+        PersistentIdentifier.object_uuid is not None,
+        PersistentIdentifier.status == 'R')
+    uuids = [pid.get_assigned_object() for pid in pids]
+    uuids = [uuid for uuid in uuids if
+             Record.get_record(uuid).get('_oai', {}).get('id') is None]
+    with click.progressbar(uuids) as uuids_bar:
+        for uuid in uuids_bar:
+            if eager:
+                load_oaiid(str(uuid))
+            else:
+                load_oaiid.delay(str(uuid))
 
 
 @migration.command()

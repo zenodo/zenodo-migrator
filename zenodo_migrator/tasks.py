@@ -24,16 +24,17 @@ from __future__ import absolute_import
 import six
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from flask import current_app
 from invenio_accounts.models import User
 from invenio_db import db
 from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
-from invenio_pidstore.errors import PIDDeletedError, PIDUnregistered
-from invenio_pidstore.models import PersistentIdentifier, PIDStatus
+from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
-from zenodo.modules.deposit.api import ZenodoDeposit
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from zenodo.modules.records.minters import zenodo_oaiid_minter
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
@@ -141,3 +142,37 @@ def load_zenodo_user(data):
 
     # Call the original invenio-migrator loading task.
     load_user.s(data).apply(throw=True)
+
+
+@shared_task
+def load_oaiid(uuid):
+    """Mint OAI ID information for the record.
+
+    :type uuid: str
+    """
+    rec = Record.get_record(uuid)
+    recid = str(rec['recid'])
+    pid_value = current_app.config['OAISERVER_ID_PREFIX'] + recid
+    try:
+        pid = PersistentIdentifier.query.filter_by(pid_value=pid_value).one()
+        if str(pid.get_assigned_object()) == uuid:
+            rec.setdefault('_oai', {})
+            rec['_oai']['id'] = pid.pid_value
+            rec.commit()
+            db.session.commit()
+            logger.info('Matching OAI PID ({pid}) for {id}'.format(
+                pid=pid, id=uuid))
+        else:
+            logger.exception(
+                'OAI PID ({pid}) for record {id} ({recid}) is '
+                'pointing to a different object ({id2})'.format(
+                    pid=pid, id=uuid, id2=str(pid.get_assigned_object()),
+                    recid=recid))
+    except NoResultFound:
+        zenodo_oaiid_minter(rec.id, rec)
+        rec.commit()
+        db.session.commit()
+    except MultipleResultsFound:
+        logger.exception(
+            'Multiple OAI PIDs found for record {id} '
+            '({recid})'.format(id=uuid, recid=recid))
