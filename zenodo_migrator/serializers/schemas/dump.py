@@ -30,8 +30,8 @@ from marshmallow import Schema, fields, pre_load, validate
 from speaklater import make_lazy_gettext
 from zenodo.modules.records.serializers.fields import SanitizedHTML, \
     TrimmedString
-from zenodo.modules.records.serializers.schemas.legacyjson import \
-    LegacyMetadataSchemaV1, LegacyRecordSchemaV1
+from zenodo.modules.records.serializers.schemas.legacyjson import LegacyMetadataSchemaV1, \
+    LegacyRecordSchemaV1
 
 from .utils import filter_empty_list, none_if_empty
 

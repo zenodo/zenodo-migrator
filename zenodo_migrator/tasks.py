@@ -30,11 +30,11 @@ from invenio_db import db
 from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
+from invenio_oaiserver.minters import oaiid_minter
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
-from zenodo.modules.records.minters import zenodo_oaiid_minter
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
@@ -169,7 +169,7 @@ def load_oaiid(uuid):
                     pid=pid, id=uuid, id2=str(pid.get_assigned_object()),
                     recid=recid))
     except NoResultFound:
-        zenodo_oaiid_minter(rec.id, rec)
+        oaiid_minter(rec.id, rec)
         rec.commit()
         db.session.commit()
     except MultipleResultsFound:
