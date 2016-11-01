@@ -48,6 +48,7 @@ tests_require = [
 extras_require = {
     'docs': [
         'Sphinx>=1.4',
+        'docutils>=0.12,<0.13',
     ],
     'tests': tests_require,
     'loader': [
@@ -164,8 +165,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Development Status :: 1 - Planning',
     ],

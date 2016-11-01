@@ -36,8 +36,8 @@ from os.path import dirname, join
 import pytest
 from celery.messaging import establish_connection
 from flask import Flask
+from flask.cli import ScriptInfo
 from flask_celeryext import FlaskCeleryExt
-from flask_cli import FlaskCLI, ScriptInfo
 from invenio_accounts import InvenioAccounts
 from invenio_accounts.testutils import create_test_user
 from invenio_db import db as db_
@@ -117,7 +117,6 @@ def app(env_config, zenodo_config, config, instance_path):
     app_.config.update(zenodo_config)
     app_.config.update(config)
 
-    FlaskCLI(app_)
     FlaskCeleryExt(app_)
     InvenioDB(app_)
     InvenioAccounts(app_)

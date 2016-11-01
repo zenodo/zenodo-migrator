@@ -25,13 +25,12 @@
 """Deposit dump serialization."""
 
 import arrow
+import zenodo.modules.records.serializers.schemas.legacyjson as legacyjson
 from flask_babelex import gettext
 from marshmallow import Schema, fields, pre_load, validate
 from speaklater import make_lazy_gettext
 from zenodo.modules.records.serializers.fields import SanitizedHTML, \
     TrimmedString
-from zenodo.modules.records.serializers.schemas.legacyjson import LegacyMetadataSchemaV1, \
-    LegacyRecordSchemaV1
 
 from .utils import filter_empty_list, none_if_empty
 
@@ -90,7 +89,7 @@ class DumpAlternateIdentifierV1(Schema):
     scheme = fields.String()
 
 
-class DumpLegacyMetadataSchemaV1(LegacyMetadataSchemaV1):
+class DumpLegacyMetadataSchemaV1(legacyjson.LegacyMetadataSchemaV1):
     """Schema for legacy deposit metadata dump."""
 
     subjects = fields.Nested(DumpSubjectSchemaV1, many=True)
@@ -102,7 +101,7 @@ class DumpLegacyMetadataSchemaV1(LegacyMetadataSchemaV1):
     doi = fields.String()
 
 
-class DumpLegacyRecordSchemaV1(LegacyRecordSchemaV1):
+class DumpLegacyRecordSchemaV1(legacyjson.LegacyRecordSchemaV1):
     """Legacy Record Schema for loading dumps."""
 
     metadata = fields.Nested(DumpLegacyMetadataSchemaV1)

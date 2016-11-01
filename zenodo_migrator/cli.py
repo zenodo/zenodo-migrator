@@ -33,7 +33,7 @@ import traceback
 
 import click
 from celery.task.control import inspect
-from flask_cli import with_appcontext
+from flask.cli import with_appcontext
 from invenio_db import db
 from invenio_github.api import GitHubAPI
 from invenio_indexer.api import RecordIndexer

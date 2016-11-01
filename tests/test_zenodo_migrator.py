@@ -29,7 +29,6 @@ from __future__ import absolute_import, print_function
 
 from click.testing import CliRunner
 from flask import Flask
-from flask_cli import FlaskCLI
 
 from zenodo_migrator import ZenodoMigrator
 from zenodo_migrator.cli import migration
@@ -44,12 +43,10 @@ def test_version():
 def test_init():
     """Test extension initialization."""
     app = Flask('testapp')
-    FlaskCLI(app)
     ext = ZenodoMigrator(app)
     assert 'zenodo-migrator' in app.extensions
 
     app = Flask('testapp')
-    FlaskCLI(app)
     ext = ZenodoMigrator()
     assert 'zenodo-migrator' not in app.extensions
     ext.init_app(app)
