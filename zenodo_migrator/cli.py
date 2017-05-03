@@ -47,7 +47,7 @@ from six import StringIO
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
     load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
-    migrate_record
+    migrate_record, versioning_new_deposit, versioning_published_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -520,3 +520,72 @@ def wait():
     i = inspect()
     while len(sum(i.reserved().values(), []) + sum(i.active().values(), [])):
         time.sleep(5)
+
+
+@migration.command()
+@click.option('--uuid', '-u')
+@click.option('--pid-value', '-p')
+@click.option('--eager', '-e', is_flag=True, default=False)
+@with_appcontext
+def deposits_versioning_upgrade(uuid=None, pid_value=None, eager=None):
+    """Run non-versioned deposit migration.
+
+    This should be used only for deposits for new (unpublished) deposits.
+    """
+    if pid_value:
+        uuid = get_uuid_from_pid_value(pid_value, pid_type='depid')
+    if uuid:
+        versioning_new_deposit(uuid)
+    else:
+        pids = PersistentIdentifier.query.filter(
+            PersistentIdentifier.pid_type == 'depid',
+            PersistentIdentifier.object_uuid is not None,
+            PersistentIdentifier.status == 'R')
+        uuids = []
+        for p in pids:
+            deposit = Record.get_record(p.object_uuid)
+            if deposit['_deposit']['status'] == 'draft':
+                recid = PersistentIdentifier.get('recid', deposit['recid'])
+                if recid.status == PIDStatus.RESERVED:
+                    uuids.append(p.object_uuid)
+
+        with click.progressbar(uuids) as progressbar:
+            for uuid in progressbar:
+                if eager:
+                    try:
+                        versioning_new_deposit(uuid)
+                    except Exception as e:
+                        click.echo(" Failed at {uuid}: {e}".format(
+                            uuid=uuid, e=e))
+                else:
+                    versioning_new_deposit.delay(str(uuid))
+
+
+@migration.command()
+@click.option('--uuid', '-u')
+@click.option('--pid-value', '-p')
+@click.option('--eager', '-e', is_flag=True, default=False)
+@with_appcontext
+def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
+    """Run non-versioned records migration."""
+    if pid_value:
+        uuid = get_uuid_from_pid_value(pid_value, pid_type='recid')
+    if uuid:
+        versioning_published_record(uuid)
+    else:
+        pids = PersistentIdentifier.query.filter(
+            PersistentIdentifier.pid_type == 'recid',
+            PersistentIdentifier.object_uuid is not None,
+            PersistentIdentifier.status == 'R')
+        uuids = [p.object_uuid for p in pids]
+
+        with click.progressbar(uuids) as progressbar:
+            for uuid in progressbar:
+                if eager:
+                    try:
+                        versioning_published_record(uuid)
+                    except Exception as e:
+                        click.echo(" Failed at {uuid}: {e}".format(
+                            uuid=uuid, e=e))
+                else:
+                    versioning_published_record.delay(str(uuid))

@@ -34,6 +34,13 @@ from invenio_oaiserver.minters import oaiid_minter
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
+
+from zenodo.modules.deposit.api import ZenodoDeposit
+from zenodo.modules.records.api import ZenodoRecord
+from zenodo.modules.records.minters import is_local_doi
+from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
+from invenio_pidrelations.contrib.versioning import PIDVersioning
+from invenio_pidrelations.contrib.records import RecordDraft
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
@@ -176,3 +183,43 @@ def load_oaiid(uuid):
         logger.exception(
             'Multiple OAI PIDs found for record {id} '
             '({recid})'.format(id=uuid, recid=recid))
+
+
+@shared_task
+def versioning_new_deposit(uuid):
+    """Migrate a yet-unpublished deposit to a versioning scheme."""
+    deposit = ZenodoDeposit.get_record(uuid)
+    # ASSERT ZENODO DOI ONLY!
+    assert 'conceptrecid' not in deposit, 'Concept RECID already in record.'
+    conceptrecid = zenodo_concept_recid_minter(uuid, deposit)
+    recid = PersistentIdentifier.get('recid', str(deposit['recid']))
+    depid = PersistentIdentifier.get('depid', str(deposit['_deposit']['id']))
+    pv = PIDVersioning(parent=conceptrecid)
+    pv.insert_draft_child(recid)
+    RecordDraft.link(recid, depid)
+    deposit.commit()
+    db.session.commit()
+
+
+@shared_task
+def versioning_published_record(uuid):
+    """Migrate a published record."""
+    record = ZenodoRecord.get_record(uuid)
+    # ASSERT ZENODO DOI ONLY!
+    assert 'conceptrecid' not in record, "Record already migrated"
+    # doi = PersistentIdentifier.get('doi', str(record['doi']))
+    # assert is_local_doi(doi.pid_value), 'DOI is not controlled by Zenodo.'
+    conceptrecid = zenodo_concept_recid_minter(uuid, record)
+    conceptrecid.register()
+    recid = PersistentIdentifier.get('recid', str(record['recid']))
+    depid = PersistentIdentifier.get('depid', str(record['_deposit']['id']))
+    pv = PIDVersioning(parent=conceptrecid)
+    pv.insert_child(recid)
+    record.commit()
+    deposit = ZenodoDeposit.get_record(depid.object_uuid)
+    deposit['conceptrecid'] = conceptrecid.pid_value
+    if deposit['_deposit']['status'] == 'draft':
+        deposit['_deposit']['pid']['revision_id'] = \
+            deposit['_deposit']['pid']['revision_id'] + 1
+    deposit.commit()
+    db.session.commit()
