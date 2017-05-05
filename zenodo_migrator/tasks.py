@@ -43,6 +43,7 @@ from invenio_pidrelations.contrib.versioning import PIDVersioning
 from invenio_pidrelations.contrib.records import RecordDraft
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo_accessrequests.models import AccessRequest, SecretLink
+from zenodo.modules.deposit.tasks import datacite_register
 
 from .deposit import transform_deposit
 from .github import migrate_github_remote_account
@@ -186,9 +187,79 @@ def load_oaiid(uuid):
 
 
 @shared_task
+def versioning_github_repository(uuid):
+    from invenio_github.models import Repository, Release, ReleaseStatus
+    from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
+    from zenodo.modules.records.minters import zenodo_concept_doi_minter
+
+    repository = Repository.query.get(uuid)
+    published_releases = repository.releases.filter_by(
+        status=ReleaseStatus.PUBLISHED).order_by(Release.release_id).all()
+
+    # Nothing to migrate if no successful release was ever made
+    if not published_releases:
+        return
+
+    deposits = [ZenodoDeposit.get_record(r.record_id) for r in
+                published_releases if r.recordmetadata.json is not None]
+    deposits = [dep for dep in deposits if 'removed_by' not in dep]
+    recids = [PersistentIdentifier.get('recid', dep['recid']) for dep in
+              deposits]
+    records = [ZenodoRecord.get_record(p.object_uuid) for p in recids]
+
+    assert not any('conceptrecid' in rec for rec in records), \
+        "One or more of the release records have been already migrated"
+    assert not any('conceptrecid' in dep for dep in deposits), \
+        "One or more of the release deposits have been already migrated"
+
+    conceptrecid = zenodo_concept_recid_minter(
+        record_uuid=records[0].id, data = records[0])
+    conceptrecid.register()
+
+    # Mint the Concept DOI if we are migrating (linking) more than one record
+    if len(records) > 1:
+        conceptdoi = zenodo_concept_doi_minter(records[0].id, records[0])
+    else:
+        conceptdoi = None
+
+    rec_comms = sorted(set(sum([rec.get('communities', [])
+                              for rec in records], [])))
+
+    dep_comms = sorted(set(sum([dep.get('communities', [])
+                              for dep in deposits], [])))
+
+    for rec in records:
+        rec['conceptrecid'] = conceptrecid.pid_value
+        if conceptdoi:
+            rec['conceptdoi'] = conceptdoi.pid_value
+        if rec_comms:
+            rec['communities'] = rec_comms
+        rec.commit()
+
+    for dep in deposits:
+        dep['conceptrecid'] = conceptrecid.pid_value
+        if conceptdoi:
+            dep['conceptdoi'] = conceptdoi.pid_value
+        if dep_comms:
+            dep['communities'] = dep_comms
+        dep.commit()
+
+    pv = PIDVersioning(parent=conceptrecid)
+    for recid in recids:
+        pv.insert_child(recid)
+    pv.update_redirect()
+
+    if current_app.config['DEPOSIT_DATACITE_MINTING_ENABLED']:
+        datacite_register.delay(recids[-1].pid_value, records[-1].id)
+    db.session.commit()
+
+
+@shared_task
 def versioning_new_deposit(uuid):
     """Migrate a yet-unpublished deposit to a versioning scheme."""
     deposit = ZenodoDeposit.get_record(uuid)
+    if 'conceptrecid' in deposit:
+        return
     # ASSERT ZENODO DOI ONLY!
     assert 'conceptrecid' not in deposit, 'Concept RECID already in record.'
     conceptrecid = zenodo_concept_recid_minter(uuid, deposit)
@@ -205,6 +276,8 @@ def versioning_new_deposit(uuid):
 def versioning_published_record(uuid):
     """Migrate a published record."""
     record = ZenodoRecord.get_record(uuid)
+    if 'conceptrecid' in record:
+        return
     # ASSERT ZENODO DOI ONLY!
     assert 'conceptrecid' not in record, "Record already migrated"
     # doi = PersistentIdentifier.get('doi', str(record['doi']))

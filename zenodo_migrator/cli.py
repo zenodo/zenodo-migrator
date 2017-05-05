@@ -47,7 +47,8 @@ from six import StringIO
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
     load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
-    migrate_record, versioning_new_deposit, versioning_published_record
+    migrate_record, versioning_new_deposit, versioning_published_record, \
+    versioning_github_repository
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -589,3 +590,25 @@ def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
                             uuid=uuid, e=e))
                 else:
                     versioning_published_record.delay(str(uuid))
+
+
+@migration.command()
+@click.option('--uuid', '-u')
+@click.option('--eager', '-e', is_flag=True, default=False)
+@with_appcontext
+def github_versioning_upgrade(uuid, eager):
+    from invenio_github.models import Repository
+    if uuid:
+        versioning_github_repository(uuid)
+    else:
+        uuids = [repo.id for repo in Repository.query.all()]
+        with click.progressbar(uuids) as progressbar:
+            for uuid in progressbar:
+                if eager:
+                    try:
+                        versioning_github_repository(uuid)
+                    except Exception as e:
+                        click.echo(" Failed at {uuid}: {e}".format(
+                            uuid=uuid, e=e))
+                else:
+                    versioning_github_repository.delay(str(uuid))
