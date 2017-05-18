@@ -36,13 +36,20 @@ from celery.task.control import inspect
 from flask.cli import with_appcontext
 from invenio_db import db
 from invenio_github.api import GitHubAPI
+from invenio_github.models import Repository
 from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
-from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
 from lxml import etree
 from six import StringIO
+
+
+from invenio_pidstore.models import PersistentIdentifier, PIDStatus
+from invenio_records.models import RecordMetadata
+from sqlalchemy import type_coerce
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.orm import aliased
 
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
@@ -529,7 +536,7 @@ def wait():
 @click.option('--eager', '-e', is_flag=True, default=False)
 @with_appcontext
 def deposits_versioning_upgrade(uuid=None, pid_value=None, eager=None):
-    """Run non-versioned deposit migration.
+    """Upgrade non-versioned and unpublished deposit for PID versioning.
 
     This should be used only for deposits for new (unpublished) deposits.
     """
@@ -538,20 +545,34 @@ def deposits_versioning_upgrade(uuid=None, pid_value=None, eager=None):
     if uuid:
         versioning_new_deposit(uuid)
     else:
-        pids = PersistentIdentifier.query.filter(
-            PersistentIdentifier.pid_type == 'depid',
-            PersistentIdentifier.object_uuid is not None,
-            PersistentIdentifier.status == 'R')
-        uuids = []
-        for p in pids:
-            deposit = Record.get_record(p.object_uuid)
-            if deposit['_deposit']['status'] == 'draft':
-                recid = PersistentIdentifier.get('recid', deposit['recid'])
-                if recid.status == PIDStatus.RESERVED:
-                    uuids.append(p.object_uuid)
 
-        with click.progressbar(uuids) as progressbar:
-            for uuid in progressbar:
+        # Get all depid-PIDs UUIDs, of new and unpublished deposits
+        # Conditions:
+        # - depid.status is REGISTERED
+        # - corresponding recid.status is RESERVED
+        a_depid = aliased(PersistentIdentifier, name='depid_alias')
+        a_deprm = aliased(RecordMetadata, name='deprm_alias')
+        a_recid = aliased(PersistentIdentifier, name='recid_alias')
+
+        depids = (
+            db.session.query(a_depid.object_uuid)
+            .join(
+                a_deprm, a_depid.object_uuid == a_deprm.id)
+            .join(
+                a_recid, a_recid.pid_value ==
+                type_coerce(a_deprm.json, JSON)[('recid',)].astext)
+            .filter(
+                a_depid.pid_type == 'depid',
+                a_recid.pid_type == 'recid',
+                a_depid.object_uuid is not None,
+                a_depid.status == PIDStatus.REGISTERED,
+                a_recid.status == PIDStatus.RESERVED,
+                type_coerce(a_deprm.json, JSON)[('_deposit', 'status')].astext
+                == 'draft')
+        )
+
+        with click.progressbar(depids, length=depids.count()) as progressbar:
+            for (uuid,) in progressbar:
                 if eager:
                     try:
                         versioning_new_deposit(uuid)
@@ -564,46 +585,16 @@ def deposits_versioning_upgrade(uuid=None, pid_value=None, eager=None):
 
 @migration.command()
 @click.option('--uuid', '-u')
-@click.option('--pid-value', '-p')
-@click.option('--eager', '-e', is_flag=True, default=False)
-@with_appcontext
-def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
-    """Run non-versioned records migration."""
-    if pid_value:
-        uuid = get_uuid_from_pid_value(pid_value, pid_type='recid')
-    if uuid:
-        versioning_published_record(uuid)
-    else:
-        pids = PersistentIdentifier.query.filter(
-            PersistentIdentifier.pid_type == 'recid',
-            PersistentIdentifier.object_uuid is not None,
-            PersistentIdentifier.status == 'R')
-        uuids = [p.object_uuid for p in pids]
-
-        with click.progressbar(uuids) as progressbar:
-            for uuid in progressbar:
-                if eager:
-                    try:
-                        versioning_published_record(uuid)
-                    except Exception as e:
-                        click.echo(" Failed at {uuid}: {e}".format(
-                            uuid=uuid, e=e))
-                else:
-                    versioning_published_record.delay(str(uuid))
-
-
-@migration.command()
-@click.option('--uuid', '-u')
 @click.option('--eager', '-e', is_flag=True, default=False)
 @with_appcontext
 def github_versioning_upgrade(uuid, eager):
-    from invenio_github.models import Repository
+    """Upgrade and link the GitHub records into versioning."""
     if uuid:
         versioning_github_repository(uuid)
     else:
-        uuids = [repo.id for repo in Repository.query.all()]
-        with click.progressbar(uuids) as progressbar:
-            for uuid in progressbar:
+        uuids = db.session.query(Repository.id)
+        with click.progressbar(uuids, length=uuids.count()) as progressbar:
+            for (uuid,) in progressbar:
                 if eager:
                     try:
                         versioning_github_repository(uuid)
@@ -612,3 +603,34 @@ def github_versioning_upgrade(uuid, eager):
                             uuid=uuid, e=e))
                 else:
                     versioning_github_repository.delay(str(uuid))
+
+
+@migration.command()
+@click.option('--uuid', '-u')
+@click.option('--pid-value', '-p')
+@click.option('--eager', '-e', is_flag=True, default=False)
+@with_appcontext
+def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
+    """Upgrade all non-versioned records to versioning."""
+    if pid_value:
+        uuid = get_uuid_from_pid_value(pid_value, pid_type='recid')
+    if uuid:
+        versioning_published_record(uuid)
+    else:
+        uuids = (
+            db.session.query(PersistentIdentifier.object_uuid)
+            .filter(
+                PersistentIdentifier.pid_type == 'recid',
+                PersistentIdentifier.object_uuid is not None,
+                PersistentIdentifier.status == PIDStatus.REGISTERED)
+        )
+        with click.progressbar(uuids, length=uuids.count()) as progressbar:
+            for (uuid,) in progressbar:
+                if eager:
+                    try:
+                        versioning_published_record(uuid)
+                    except Exception as e:
+                        click.echo(" Failed at {uuid}: {e}".format(
+                            uuid=uuid, e=e))
+                else:
+                    versioning_published_record.delay(str(uuid))

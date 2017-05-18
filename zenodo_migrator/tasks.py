@@ -40,6 +40,7 @@ from zenodo.modules.records.api import ZenodoRecord
 from zenodo.modules.records.minters import is_local_doi
 from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
 from invenio_pidrelations.contrib.versioning import PIDVersioning
+from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidrelations.contrib.records import RecordDraft
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo_accessrequests.models import AccessRequest, SecretLink
@@ -191,6 +192,7 @@ def versioning_github_repository(uuid):
     from invenio_github.models import Repository, Release, ReleaseStatus
     from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
     from zenodo.modules.records.minters import zenodo_concept_doi_minter
+    from invenio_pidrelations.contrib.records import index_siblings
 
     repository = Repository.query.get(uuid)
     published_releases = repository.releases.filter_by(
@@ -203,9 +205,14 @@ def versioning_github_repository(uuid):
     deposits = [ZenodoDeposit.get_record(r.record_id) for r in
                 published_releases if r.recordmetadata.json is not None]
     deposits = [dep for dep in deposits if 'removed_by' not in dep]
+
     recids = [PersistentIdentifier.get('recid', dep['recid']) for dep in
               deposits]
     records = [ZenodoRecord.get_record(p.object_uuid) for p in recids]
+
+    # There were successful releases, but deposits/records were removed since
+    if not records:
+        return
 
     assert not any('conceptrecid' in rec for rec in records), \
         "One or more of the release records have been already migrated"
@@ -253,6 +260,9 @@ def versioning_github_repository(uuid):
         datacite_register.delay(recids[-1].pid_value, records[-1].id)
     db.session.commit()
 
+    # Reindex all siblings
+    index_siblings(pv.last_child, with_deposits=True)
+
 
 @shared_task
 def versioning_new_deposit(uuid):
@@ -285,14 +295,22 @@ def versioning_published_record(uuid):
     conceptrecid = zenodo_concept_recid_minter(uuid, record)
     conceptrecid.register()
     recid = PersistentIdentifier.get('recid', str(record['recid']))
-    depid = PersistentIdentifier.get('depid', str(record['_deposit']['id']))
     pv = PIDVersioning(parent=conceptrecid)
     pv.insert_child(recid)
     record.commit()
-    deposit = ZenodoDeposit.get_record(depid.object_uuid)
-    deposit['conceptrecid'] = conceptrecid.pid_value
-    if deposit['_deposit']['status'] == 'draft':
-        deposit['_deposit']['pid']['revision_id'] = \
-            deposit['_deposit']['pid']['revision_id'] + 1
-    deposit.commit()
+    # Some old records have no deposit ID, some don't have '_deposit'
+    if ('_deposit' in record and
+            'id' in record['_deposit'] and
+            record['_deposit']['id']):
+        try:
+            depid = PersistentIdentifier.get('depid',
+                                             str(record['_deposit']['id']))
+            deposit = ZenodoDeposit.get_record(depid.object_uuid)
+            deposit['conceptrecid'] = conceptrecid.pid_value
+            if deposit['_deposit']['status'] == 'draft':
+                deposit['_deposit']['pid']['revision_id'] = \
+                    deposit['_deposit']['pid']['revision_id'] + 1
+            deposit.commit()
+        except PIDDoesNotExistError:
+            pass
     db.session.commit()
