@@ -66,6 +66,7 @@ extras_require = {
         'invenio-oaiserver>=1.0.0a5',
         'invenio-oauthclient>=1.0.0a7',
         'invenio-pidstore>=1.0.0a7',
+        'invenio-pidrelations>=1.0.0a3',
         'invenio-records>=1.0.0a15',
         'invenio-search>=1.0.0a7',
         'lxml>=3.4.4',

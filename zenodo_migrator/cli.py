@@ -40,13 +40,11 @@ from invenio_github.models import Repository
 from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
+from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
+from invenio_records.models import RecordMetadata
 from lxml import etree
 from six import StringIO
-
-
-from invenio_pidstore.models import PersistentIdentifier, PIDStatus
-from invenio_records.models import RecordMetadata
 from sqlalchemy import type_coerce
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import aliased
@@ -54,8 +52,8 @@ from sqlalchemy.orm import aliased
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
     load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
-    migrate_record, versioning_new_deposit, versioning_published_record, \
-    versioning_github_repository
+    migrate_record, versioning_github_repository, versioning_new_deposit, \
+    versioning_published_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -567,8 +565,8 @@ def deposits_versioning_upgrade(uuid=None, pid_value=None, eager=None):
                 a_depid.object_uuid is not None,
                 a_depid.status == PIDStatus.REGISTERED,
                 a_recid.status == PIDStatus.RESERVED,
-                type_coerce(a_deprm.json, JSON)[('_deposit', 'status')].astext
-                == 'draft')
+                type_coerce(a_deprm.json, JSON)[('_deposit',
+                                                 'status')].astext == 'draft')
         )
 
         with click.progressbar(depids, length=depids.count()) as progressbar:

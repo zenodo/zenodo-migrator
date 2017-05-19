@@ -60,7 +60,7 @@ from zenodo_migrator import ZenodoMigrator
 
 @pytest.yield_fixture(scope='session')
 def instance_path():
-    """Default instance path."""
+    """Create instance path."""
     path = tempfile.mkdtemp()
 
     yield path
@@ -70,7 +70,7 @@ def instance_path():
 
 @pytest.fixture(scope='session')
 def env_config(instance_path):
-    """Default instance path."""
+    """Create the config from environment."""
     os.environ.update(
         APP_INSTANCE_PATH=os.environ.get(
             'INSTANCE_PATH', instance_path),
@@ -90,7 +90,7 @@ def zenodo_config():
 
 @pytest.fixture(scope='session')
 def config():
-    """Default configuration."""
+    """App configuration."""
     return dict(
         BROKER_URL=os.environ.get('BROKER_URL', 'memory://'),
         CELERY_ALWAYS_EAGER=True,

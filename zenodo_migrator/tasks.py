@@ -31,20 +31,18 @@ from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
 from invenio_oaiserver.minters import oaiid_minter
+from invenio_pidrelations.contrib.records import RecordDraft
+from invenio_pidrelations.contrib.versioning import PIDVersioning
+from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_userprofiles.api import UserProfile
-
-from zenodo.modules.deposit.api import ZenodoDeposit
-from zenodo.modules.records.api import ZenodoRecord
-from zenodo.modules.records.minters import is_local_doi
-from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
-from invenio_pidrelations.contrib.versioning import PIDVersioning
-from invenio_pidstore.errors import PIDDoesNotExistError
-from invenio_pidrelations.contrib.records import RecordDraft
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
-from zenodo_accessrequests.models import AccessRequest, SecretLink
+from zenodo.modules.deposit.api import ZenodoDeposit
+from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
 from zenodo.modules.deposit.tasks import datacite_register
+from zenodo.modules.records.api import ZenodoRecord
+from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
 from .github import migrate_github_remote_account
@@ -189,6 +187,11 @@ def load_oaiid(uuid):
 
 @shared_task
 def versioning_github_repository(uuid):
+    """
+    Migrate the GitHub repositories.
+
+    :param uuid: UUID of the repository (invenio_github.models.Repository)
+    """
     from invenio_github.models import Repository, Release, ReleaseStatus
     from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
     from zenodo.modules.records.minters import zenodo_concept_doi_minter
@@ -220,7 +223,7 @@ def versioning_github_repository(uuid):
         "One or more of the release deposits have been already migrated"
 
     conceptrecid = zenodo_concept_recid_minter(
-        record_uuid=records[0].id, data = records[0])
+        record_uuid=records[0].id, data=records[0])
     conceptrecid.register()
 
     # Mint the Concept DOI if we are migrating (linking) more than one record
@@ -230,10 +233,10 @@ def versioning_github_repository(uuid):
         conceptdoi = None
 
     rec_comms = sorted(set(sum([rec.get('communities', [])
-                              for rec in records], [])))
+                                for rec in records], [])))
 
     dep_comms = sorted(set(sum([dep.get('communities', [])
-                              for dep in deposits], [])))
+                                for dep in deposits], [])))
 
     for rec in records:
         rec['conceptrecid'] = conceptrecid.pid_value
