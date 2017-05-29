@@ -192,14 +192,14 @@ def versioning_github_repository(uuid):
 
     :param uuid: UUID of the repository (invenio_github.models.Repository)
     """
-    from invenio_github.models import Repository, Release, ReleaseStatus
+    from invenio_github.models import Repository, ReleaseStatus
     from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
     from zenodo.modules.records.minters import zenodo_concept_doi_minter
     from invenio_pidrelations.contrib.records import index_siblings
 
     repository = Repository.query.get(uuid)
     published_releases = repository.releases.filter_by(
-        status=ReleaseStatus.PUBLISHED).order_by(Release.release_id).all()
+        status=ReleaseStatus.PUBLISHED).all()
 
     # Nothing to migrate if no successful release was ever made
     if not published_releases:
@@ -208,6 +208,7 @@ def versioning_github_repository(uuid):
     deposits = [ZenodoDeposit.get_record(r.record_id) for r in
                 published_releases if r.recordmetadata.json is not None]
     deposits = [dep for dep in deposits if 'removed_by' not in dep]
+    deposits = sorted(deposits, key=lambda dep: int(dep['recid']))
 
     recids = [PersistentIdentifier.get('recid', dep['recid']) for dep in
               deposits]
