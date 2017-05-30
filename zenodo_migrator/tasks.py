@@ -261,7 +261,7 @@ def versioning_github_repository(uuid):
     pv.update_redirect()
 
     if current_app.config['DEPOSIT_DATACITE_MINTING_ENABLED']:
-        datacite_register.delay(recids[-1].pid_value, records[-1].id)
+        datacite_register.delay(recids[-1].pid_value, str(records[-1].id))
     db.session.commit()
 
     # Reindex all siblings
