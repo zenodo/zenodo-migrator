@@ -31,7 +31,7 @@ from invenio_files_rest.models import FileInstance
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
 from invenio_oaiserver.minters import oaiid_minter
-from invenio_pidrelations.contrib.records import RecordDraft
+from invenio_pidrelations.contrib.records import RecordDraft, index_siblings
 from invenio_pidrelations.contrib.versioning import PIDVersioning
 from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidstore.models import PersistentIdentifier
@@ -40,8 +40,11 @@ from invenio_userprofiles.api import UserProfile
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo.modules.deposit.api import ZenodoDeposit
 from zenodo.modules.deposit.minters import zenodo_concept_recid_minter
+from zenodo.modules.deposit.resolvers import deposit_resolver
 from zenodo.modules.deposit.tasks import datacite_register
 from zenodo.modules.records.api import ZenodoRecord
+from zenodo.modules.records.minters import zenodo_concept_doi_minter
+from zenodo.modules.records.resolvers import record_resolver
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
@@ -318,3 +321,80 @@ def versioning_published_record(uuid):
         except PIDDoesNotExistError:
             pass
     db.session.commit()
+
+
+def versioning_link_records(recids):
+    """Link several non-versioned records into one versioning scheme.
+
+    The records are linked in the order as they appear in the list, with
+    the first record being base for minting of the conceptdoi.
+
+    :param recids: list of recid values (strings) to link,
+                   e.g.: ['1234','55125','51269']
+    :type recids: list of str
+    """
+    recids_records = [record_resolver.resolve(recid_val) for recid_val in
+                      recids]
+    depids_deposits = [deposit_resolver.resolve(record['_deposit']['id'])
+                       for _, record in recids_records]
+
+    rec_comms = sorted(set(sum([rec.get('communities', [])
+                                for _, rec in recids_records], [])))
+
+    dep_comms = sorted(set(sum([dep.get('communities', [])
+                                for _, dep in depids_deposits], [])))
+
+    # TODO: If any of the conceptdois is minted, allow for merging
+    assert (not any('conceptdoi' in rec for _, rec in recids_records))
+
+    # Get the first record and mind the concept DOI for it
+    recid_r1, record_r1 = recids_records[0]
+    conceptdoi = zenodo_concept_doi_minter(record_r1.id, record_r1)
+    record_r1['communities'] = rec_comms
+    record_r1.commit()
+
+    # Also, update its deposit 'conceptdoi' key
+    depid_r1, deposit_r1 = depids_deposits[0]
+    deposit_r1['conceptdoi'] = conceptdoi.pid_value
+    deposit_r1['communities'] = dep_comms
+    deposit_r1.commit()
+
+    conceptrecid_r1 = PersistentIdentifier.get('recid',
+                                               record_r1['conceptrecid'])
+    conceptrecid_r1_val = conceptrecid_r1.pid_value
+
+    pv_r1 = PIDVersioning(parent=conceptrecid_r1)
+
+    for (recid, record), (depid, deposit) in \
+            zip(recids_records[1:], depids_deposits[1:]):
+
+        # Remove old versioning schemes
+        conceptrecid = PersistentIdentifier.get('recid',
+                                                record['conceptrecid'])
+        pv = PIDVersioning(parent=conceptrecid)
+        pv.remove_child(recid)
+        conceptrecid.delete()
+
+        # Update the 'conceptrecid' and 'conceptdoi' in records and deposits
+        record['conceptdoi'] = conceptdoi.pid_value
+        record['conceptrecid'] = conceptrecid_r1.pid_value
+        record['communities'] = rec_comms
+        record.commit()
+        deposit['conceptdoi'] = conceptdoi.pid_value
+        deposit['conceptrecid'] = conceptrecid_r1.pid_value
+        deposit['communities'] = dep_comms
+        deposit.commit()
+
+        # Add the child to the new versioning scheme
+        pv_r1.insert_child(recid)
+
+    pv_r1.update_redirect()
+    db.session.commit()
+
+    conceptrecid_r1 = PersistentIdentifier.get('recid', conceptrecid_r1_val)
+    pv = PIDVersioning(parent=conceptrecid_r1)
+    if current_app.config['DEPOSIT_DATACITE_MINTING_ENABLED']:
+        datacite_register.delay(pv.last_child.pid_value,
+                                str(pv.last_child.object_uuid))
+
+    index_siblings(pv.last_child, with_deposits=True, eager=True)

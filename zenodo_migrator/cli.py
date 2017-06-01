@@ -52,8 +52,8 @@ from sqlalchemy.orm import aliased
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
     load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
-    migrate_record, versioning_github_repository, versioning_new_deposit, \
-    versioning_published_record
+    migrate_record, versioning_github_repository, versioning_link_records, \
+    versioning_new_deposit, versioning_published_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -632,3 +632,11 @@ def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
                             uuid=uuid, e=e))
                 else:
                     versioning_published_record.delay(str(uuid))
+
+
+@migration.command()
+@click.argument('recids', type=str, nargs=-1)
+@with_appcontext
+def versioning_link(recids):
+    """Upgrade all non-versioned records to versioning."""
+    versioning_link_records(recids)
