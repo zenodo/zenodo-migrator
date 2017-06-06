@@ -40,6 +40,7 @@ from invenio_github.models import Repository
 from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
+from invenio_pidrelations.contrib.versioning import PIDVersioning
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
 from invenio_records.models import RecordMetadata
@@ -48,6 +49,7 @@ from six import StringIO
 from sqlalchemy import type_coerce
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import aliased
+from zenodo.modules.records.resolvers import record_resolver
 
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
@@ -638,5 +640,57 @@ def records_versioning_upgrade(uuid=None, pid_value=None, eager=None):
 @click.argument('recids', type=str, nargs=-1)
 @with_appcontext
 def versioning_link(recids):
-    """Upgrade all non-versioned records to versioning."""
+    """Link several records into a versioning scheme.
+
+    Support cases with some records being already versioned, as long
+    as they are all within a single versioning scheme.
+
+    For example, given the following records:
+    - 123, 234, 345 (record with 3 versions)
+    - 543, 432 (record with 2 versions)
+    - 111 (single non-versioned record)
+    - 222 (single, non-versioned record)
+
+    The following cases are supported (Good) or not supported (Error):
+    versioning_link 111 123 234 345 (Good - will add 111 as first version)
+    versioning_link 111 222 (Good, will create new versioning scheme)
+    versioning_link 345 123 234 (Good - no new records liked, but will reorder
+                                 the records in the versioning list)
+    versioning_link 123 234 543 (Error - trying to link two versioned records)
+    versioning_link 123 234 (Error - must specify all children)
+    """
+    int_recids = [int(recid) for recid in recids]
+    if sorted(int_recids) != int_recids and not click.confirm(
+            u'Requested RECIDS are not in the order of creation. Continue?'):
+        click.echo(click.style(u'Record linking aborted.', fg='green'))
+        return
+
+    recids_records = [record_resolver.resolve(recid_val) for recid_val in
+                      recids]
+
+    upgraded = [(recid, rec) for recid, rec in recids_records
+                if 'conceptdoi' in rec]
+
+    if len(upgraded) == 1 and not click.confirm(
+        u'Recid {0} already migrated. Its Concept recid: {1} will be used as'
+        u'the base for the Concept DOI in the versioning linking. '
+            u'Continue?'):
+        return
+    elif len(upgraded) > 1:
+        i_recids = [int(recid) for recid in recids]
+        child_recids = [int(recid.pid_value) for recid in
+                        PIDVersioning(child=upgraded[0][0]).children.all()]
+        if not all(cr in i_recids for cr in child_recids):
+            click.echo(u'All children recids ({0}) of the upgraded record need'
+                       u' to be specified. Aborting.'.format(
+                           [recid for recid in child_recids]))
+            return
+        i_upgraded = [int(recid.pid_value) for recid, rec in upgraded]
+        if set(child_recids) != set(i_upgraded):
+            click.echo(u'Found multiple upgraded records {0}, which do not '
+                       u'belong to a single versioning scheme. Aborting.'
+                       u''.format(
+                           i_upgraded,
+                           [recid for recid in child_recids]))
+            return
     versioning_link_records(recids)

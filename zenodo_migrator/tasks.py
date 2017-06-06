@@ -328,6 +328,8 @@ def versioning_link_records(recids):
 
     The records are linked in the order as they appear in the list, with
     the first record being base for minting of the conceptdoi.
+    In case one of the records is already upgraded, its taken as the base
+    for conceptdoi instead, with preserving the requested order.
 
     :param recids: list of recid values (strings) to link,
                    e.g.: ['1234','55125','51269']
@@ -344,44 +346,59 @@ def versioning_link_records(recids):
     dep_comms = sorted(set(sum([dep.get('communities', [])
                                 for _, dep in depids_deposits], [])))
 
-    # TODO: If any of the conceptdois is minted, allow for merging
-    assert (not any('conceptdoi' in rec for _, rec in recids_records))
+    upgraded = [(recid, rec) for recid, rec in recids_records
+                if 'conceptdoi' in rec]
 
-    # Get the first record and mind the concept DOI for it
-    recid_r1, record_r1 = recids_records[0]
-    conceptdoi = zenodo_concept_doi_minter(record_r1.id, record_r1)
-    record_r1['communities'] = rec_comms
-    record_r1.commit()
+    # Determine the base record for versioning
+    if len(upgraded) == 0:
+        recid_v, record_v = recids_records[0]
+    elif len(upgraded) == 1:
+        recid_v, record_v = upgraded[0]
+    elif len(upgraded) > 1:
+        recid_v, record_v = upgraded[0]
+        child_recids = [int(recid.pid_value) for recid in
+                        PIDVersioning(child=recid_v).children.all()]
 
-    # Also, update its deposit 'conceptdoi' key
-    depid_r1, deposit_r1 = depids_deposits[0]
-    deposit_r1['conceptdoi'] = conceptdoi.pid_value
-    deposit_r1['communities'] = dep_comms
-    deposit_r1.commit()
+        i_upgraded = [int(recid.pid_value) for recid, rec in upgraded]
+        if set(child_recids) != set(i_upgraded):
+            raise Exception('Multiple upgraded records, which belong'
+                            'to different versioning schemes.')
 
-    conceptrecid_r1 = PersistentIdentifier.get('recid',
-                                               record_r1['conceptrecid'])
-    conceptrecid_r1_val = conceptrecid_r1.pid_value
+    # Get the first record and mint the concept DOI for it
+    conceptdoi = zenodo_concept_doi_minter(record_v.id, record_v)
 
-    pv_r1 = PIDVersioning(parent=conceptrecid_r1)
+    conceptrecid_v = PersistentIdentifier.get('recid',
+                                              record_v['conceptrecid'])
+    conceptrecid_v_val = conceptrecid_v.pid_value
+
+    pv_r1 = PIDVersioning(parent=conceptrecid_v)
+    children_recids = [c.pid_value for c in pv_r1.children.all()]
+    if not all(cr in recids for cr in children_recids):
+        raise Exception('Children of the already upgraded record: {0} are '
+                        'not specified in the ordering: {1}'
+                        ''.format(children_recids, recids))
 
     for (recid, record), (depid, deposit) in \
-            zip(recids_records[1:], depids_deposits[1:]):
+            zip(recids_records, depids_deposits):
 
-        # Remove old versioning schemes
+        # Remove old versioning schemes for non-base recids
+        # Note: This will remove the child of the base-conceptrecid as well
+        # but that's OK, since it will be added again afterwards in the
+        # correct order.
         conceptrecid = PersistentIdentifier.get('recid',
                                                 record['conceptrecid'])
         pv = PIDVersioning(parent=conceptrecid)
         pv.remove_child(recid)
-        conceptrecid.delete()
+        if conceptrecid.pid_value != conceptrecid_v_val:
+            conceptrecid.delete()
 
         # Update the 'conceptrecid' and 'conceptdoi' in records and deposits
         record['conceptdoi'] = conceptdoi.pid_value
-        record['conceptrecid'] = conceptrecid_r1.pid_value
+        record['conceptrecid'] = conceptrecid_v.pid_value
         record['communities'] = rec_comms
         record.commit()
         deposit['conceptdoi'] = conceptdoi.pid_value
-        deposit['conceptrecid'] = conceptrecid_r1.pid_value
+        deposit['conceptrecid'] = conceptrecid_v.pid_value
         deposit['communities'] = dep_comms
         deposit.commit()
 
@@ -391,8 +408,8 @@ def versioning_link_records(recids):
     pv_r1.update_redirect()
     db.session.commit()
 
-    conceptrecid_r1 = PersistentIdentifier.get('recid', conceptrecid_r1_val)
-    pv = PIDVersioning(parent=conceptrecid_r1)
+    conceptrecid_v = PersistentIdentifier.get('recid', conceptrecid_v_val)
+    pv = PIDVersioning(parent=conceptrecid_v)
     if current_app.config['DEPOSIT_DATACITE_MINTING_ENABLED']:
         datacite_register.delay(pv.last_child.pid_value,
                                 str(pv.last_child.object_uuid))
