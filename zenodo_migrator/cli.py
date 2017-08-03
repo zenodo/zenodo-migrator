@@ -41,6 +41,7 @@ from invenio_indexer.api import RecordIndexer
 from invenio_migrator.cli import dumps, loadcommon
 from invenio_oauthclient.models import RemoteAccount
 from invenio_pidrelations.contrib.versioning import PIDVersioning
+from invenio_pidrelations.models import PIDRelation
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
 from invenio_records.models import RecordMetadata
@@ -53,8 +54,9 @@ from zenodo.modules.records.resolvers import record_resolver
 
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
-    load_zenodo_user, migrate_deposit, migrate_files, migrate_github_task, \
-    migrate_record, versioning_github_repository, versioning_link_records, \
+    load_zenodo_user, migrate_concept_recid_sips, migrate_deposit, \
+    migrate_files, migrate_github_task, migrate_record, \
+    versioning_github_repository, versioning_link_records, \
     versioning_new_deposit, versioning_published_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
@@ -694,3 +696,28 @@ def versioning_link(recids):
                            [recid for recid in child_recids]))
             return
     versioning_link_records(recids)
+
+
+@migration.command()
+@click.option('--recid', type=str, default=None)
+@with_appcontext
+def migrate_versioned_sips(recid):
+    """Migrate the versioned-record SIPs."""
+    if recid:
+        migrate_concept_recid_sips(recid)
+    else:
+        a_crecid = aliased(PersistentIdentifier, name='conceptrecid_alias')
+        a_pidr = aliased(PIDRelation, name='pidrelation_alias')
+        rmeta = (
+            db.session.query(a_crecid)
+            .join(
+                a_pidr,
+                a_pidr.parent_id == a_crecid.id)
+            .filter(
+                a_pidr.relation_type == 0,
+                a_crecid.status == PIDStatus.REDIRECTED)
+            .distinct(
+                a_pidr.parent_id
+            ))
+        for pid in rmeta:
+            migrate_concept_recid_sips.delay(str(pid.pid_value))

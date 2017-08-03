@@ -21,6 +21,8 @@
 
 from __future__ import absolute_import
 
+from os.path import join
+
 import six
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -36,6 +38,9 @@ from invenio_pidrelations.contrib.versioning import PIDVersioning
 from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
+from invenio_sipstore.api import SIP as SIPApi
+from invenio_sipstore.archivers.bagit_archiver import BagItArchiver
+from invenio_sipstore.models import SIP, RecordSIP
 from invenio_userprofiles.api import UserProfile
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo.modules.deposit.api import ZenodoDeposit
@@ -45,6 +50,7 @@ from zenodo.modules.deposit.tasks import datacite_register
 from zenodo.modules.records.api import ZenodoRecord
 from zenodo.modules.records.minters import zenodo_concept_doi_minter
 from zenodo.modules.records.resolvers import record_resolver
+# from zenodo.modules.sipstore.utils import generate_bag_path_from_sip
 from zenodo_accessrequests.models import AccessRequest, SecretLink
 
 from .deposit import transform_deposit
@@ -415,3 +421,31 @@ def versioning_link_records(recids):
                                 str(pv.last_child.object_uuid))
 
     index_siblings(pv.last_child, with_deposits=True, eager=True)
+
+
+@shared_task
+def migrate_concept_recid_sips(recid):
+    """Create Bagit metadata for SIPs."""
+    pid = PersistentIdentifier.get('recid', recid)
+    pv = PIDVersioning(parent=pid)
+    all_sips = []
+    for child in pv.children:
+        pid, rec = record_resolver.resolve(child.pid_value)
+        rsips = RecordSIP.query.filter_by(
+            pid_id=pid.id).order_by(RecordSIP.created)
+        all_sips.append([rs.sip.id for rs in rsips])
+    base_sip_id = None
+
+    for sipv in all_sips:
+        for idx, sip_id in enumerate(sipv):
+            sip = SIP.query.get(sip_id)
+            base_sip = SIP.query.get(base_sip_id) if base_sip_id else None
+            bia = BagItArchiver(SIPApi(sip), patch_of=base_sip,
+                    include_all_previous=(idx == 0))
+
+            bmeta = BagItArchiver.get_bagit_metadata(sip)
+
+            if not bmeta:
+                bia.save_bagit_metadata()
+            base_sip_id = sip_id
+            db.session.commit()
