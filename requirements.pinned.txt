@@ -22,41 +22,5 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-notifications:
-  email: false
-
-sudo: false
-
-language: python
-
-cache:
-  - pip
-
-env:
-  # Temporarily disable until release of Zenodo
-  # - REQUIREMENTS=lowest
-  # - REQUIREMENTS=release
-  - REQUIREMENTS=devel
-
-python:
-  - "2.7"
-  - "3.5"
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "requirements-builder --level=pypi setup.py > .travis-release-requirements.txt"
-  - "requirements-builder --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -r requirements.txt"  # Install Zenodo exact dependencies
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+# 2.13.5 break Invenio-OAIServer date granularity validation.
+marshmallow==2.13.4

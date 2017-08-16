@@ -27,14 +27,15 @@
 
 from __future__ import absolute_import, print_function
 
+import pytest
 from invenio_records.api import Record
 
-from zenodo_migrator.deposit import transform_deposit
 
-
-def DISABLED_test_deposits_transform(app, db, deposit_dump):
+@pytest.mark.skip(reason="No longer compatible with newest Invenio packages.")
+def test_deposits_transform(app, db, deposit_dump):
     """Test deposit transformation."""
-
+    # Importing transform_deposit is causing errors
+    from zenodo_migrator.deposit import transform_deposit
     deposit_dump = [deposit_dump[6]]
     for idx, (inp, expected) in enumerate(deposit_dump, 1):
         deposit = Record.create(inp)
