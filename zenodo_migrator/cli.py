@@ -45,12 +45,14 @@ from invenio_pidrelations.models import PIDRelation
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records.api import Record
 from invenio_records.models import RecordMetadata
+from invenio_sipstore.models import SIP
 from lxml import etree
 from six import StringIO
 from sqlalchemy import type_coerce
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import aliased
 from zenodo.modules.records.resolvers import record_resolver
+from zenodo.modules.sipstore.tasks import archive_sip
 
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
@@ -704,7 +706,7 @@ def versioning_link(recids):
 def migrate_versioned_sips(recid):
     """Migrate the versioned-record SIPs."""
     if recid:
-        migrate_concept_recid_sips(recid)
+        migrate_concept_recid_sips.s(recid).apply(throw=True)
     else:
         a_crecid = aliased(PersistentIdentifier, name='conceptrecid_alias')
         a_pidr = aliased(PIDRelation, name='pidrelation_alias')
@@ -720,4 +722,17 @@ def migrate_versioned_sips(recid):
                 a_pidr.parent_id
             ))
         for pid in rmeta:
-            migrate_concept_recid_sips.delay(str(pid.pid_value))
+            migrate_concept_recid_sips.s(str(pid.pid_value)).apply_async()
+
+
+@migration.command()
+@click.option('--sip-id', type=str, default=None)
+@with_appcontext
+def write_unarchived_sips(sip_id):
+    """Write all SIPs which were not archived to disk."""
+    if sip_id:
+        archive_sip.s(sip_id).apply(throw=True)
+    else:
+        sips = SIP.query.filter_by(archived=False)
+        for sip in sips:
+            archive_sip.s(str(sip.id)).apply_async()

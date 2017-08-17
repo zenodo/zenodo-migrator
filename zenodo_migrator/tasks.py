@@ -21,8 +21,6 @@
 
 from __future__ import absolute_import
 
-from os.path import join
-
 import six
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -441,7 +439,7 @@ def migrate_concept_recid_sips(recid):
             sip = SIP.query.get(sip_id)
             base_sip = SIP.query.get(base_sip_id) if base_sip_id else None
             bia = BagItArchiver(SIPApi(sip), patch_of=base_sip,
-                    include_all_previous=(idx == 0))
+                                include_all_previous=(idx == 0))
 
             bmeta = BagItArchiver.get_bagit_metadata(sip)
 
