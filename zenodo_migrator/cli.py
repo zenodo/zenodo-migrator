@@ -702,11 +702,13 @@ def versioning_link(recids):
 
 @migration.command()
 @click.option('--recid', type=str, default=None)
+@click.option('--overwrite', type=bool, default=False, is_flag=True)
 @with_appcontext
-def migrate_versioned_sips(recid):
+def migrate_versioned_sips(recid, overwrite):
     """Migrate the versioned-record SIPs."""
     if recid:
-        migrate_concept_recid_sips.s(recid).apply(throw=True)
+        migrate_concept_recid_sips.s(recid, overwrite=overwrite).apply(
+            throw=True)
     else:
         a_crecid = aliased(PersistentIdentifier, name='conceptrecid_alias')
         a_pidr = aliased(PIDRelation, name='pidrelation_alias')
@@ -722,7 +724,8 @@ def migrate_versioned_sips(recid):
                 a_pidr.parent_id
             ))
         for pid in rmeta:
-            migrate_concept_recid_sips.s(str(pid.pid_value)).apply_async()
+            migrate_concept_recid_sips.s(str(pid.pid_value),
+                                         overwrite=overwrite).apply_async()
 
 
 @migration.command()

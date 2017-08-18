@@ -52,7 +52,11 @@ before_install:
 
 install:
   - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -r requirements.txt"  # Install Zenodo exact dependencies
+  - "travis_retry wget https://raw.githubusercontent.com/zenodo/zenodo/master/requirements.txt"
+  - "travis_retry wget https://raw.githubusercontent.com/zenodo/zenodo/master/requirements.pinned.txt"
+  - "travis_retry pip install -r requirements.txt"  # Install Zenodo pinned dependencies
+  - "rm requirements.txt"
+  - "rm requirements.pinned.txt"
   - "travis_retry pip install -e .[all]"
 
 script:
