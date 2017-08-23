@@ -21,13 +21,14 @@
 
 from __future__ import absolute_import
 
+import arrow
 import six
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from flask import current_app
 from invenio_accounts.models import User
 from invenio_db import db
-from invenio_files_rest.models import FileInstance
+from invenio_files_rest.models import FileInstance, ObjectVersion
 from invenio_migrator.tasks.users import load_user
 from invenio_migrator.tasks.utils import load_common
 from invenio_oaiserver.minters import oaiid_minter
@@ -38,7 +39,7 @@ from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_sipstore.api import SIP as SIPApi
 from invenio_sipstore.archivers.bagit_archiver import BagItArchiver
-from invenio_sipstore.models import SIP, RecordSIP
+from invenio_sipstore.models import SIP, RecordSIP, SIPFile, SIPMetadataType
 from invenio_userprofiles.api import UserProfile
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo.modules.deposit.api import ZenodoDeposit
@@ -447,3 +448,54 @@ def migrate_concept_recid_sips(recid, overwrite=False):
                 bia.save_bagit_metadata(overwrite=True)
             base_sip_id = sip_id
             db.session.commit()
+
+
+@shared_task
+def reconstruct_sipfiles_t(recid=None, pid=None):
+    """Reconstruct SIPFiles from record metadata."""
+    if not pid:
+        pid = PersistentIdentifier.get('recid', recid)
+
+    recsip = RecordSIP.query.filter_by(
+        pid_id=pid.id).order_by(RecordSIP.created).first()
+    if recsip is None:
+        raise Exception("RecordSIP does not exist.")
+    sip = recsip.sip
+    record = Record.get_record(recsip.pid.object_uuid)
+    first_json_rec = \
+        next((rec for rec in record.revisions if '_files' in rec), None)
+    if first_json_rec is None:
+        raise Exception("Files information not found in SIPMetadata nor"
+                        " in Record revision")
+    files_j = first_json_rec['_files']
+    ovs = [
+        ObjectVersion.query.filter_by(
+            version_id=fj['version_id']).first() for fj in files_j
+    ]
+    for ov in ovs:
+        q = SIPFile.query.filter_by(
+            sip_id=sip.id, filepath=ov.key, file_id=ov.file_id)
+        if not q.count():
+            obj = SIPFile(
+                sip_id=sip.id,
+                filepath=ov.key,
+                file_id=ov.file_id,
+                created=sip.created)
+            db.session.add(obj)
+    db.session.commit()
+
+
+@shared_task
+def load_sipfile(file_id, filepath, sip_id, created):
+    """Load a single SIPFile from parameters into DB."""
+    q = SIPFile.query.filter_by(
+        sip_id=sip_id, filepath=filepath, file_id=file_id)
+    dt_created = arrow.get(created).datetime.replace(tzinfo=None)
+    if not q.count():
+        obj = SIPFile(
+            sip_id=sip_id,
+            filepath=filepath,
+            file_id=file_id,
+            created=dt_created)
+        db.session.add(obj)
+        db.session.commit()

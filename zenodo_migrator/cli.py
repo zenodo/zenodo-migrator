@@ -30,6 +30,7 @@ import json
 import sys
 import time
 import traceback
+from datetime import datetime
 
 import click
 from celery.task.control import inspect
@@ -56,10 +57,11 @@ from zenodo.modules.sipstore.tasks import archive_sip
 
 from .github import migrate_github_remote_account, update_local_gh_db
 from .tasks import load_accessrequest, load_oaiid, load_secretlink, \
-    load_zenodo_user, migrate_concept_recid_sips, migrate_deposit, \
-    migrate_files, migrate_github_task, migrate_record, \
-    versioning_github_repository, versioning_link_records, \
-    versioning_new_deposit, versioning_published_record
+    load_sipfile, load_zenodo_user, migrate_concept_recid_sips, \
+    migrate_deposit, migrate_files, migrate_github_task, migrate_record, \
+    reconstruct_sipfiles_t, versioning_github_repository, \
+    versioning_link_records, versioning_new_deposit, \
+    versioning_published_record
 from .transform import migrate_record as migrate_record_func
 from .transform import transform_record
 
@@ -739,3 +741,40 @@ def write_unarchived_sips(sip_id):
         sips = SIP.query.filter_by(archived=False)
         for sip in sips:
             archive_sip.s(str(sip.id)).apply_async()
+
+
+@migration.command()
+@click.option('--recid', type=str, default=None)
+@with_appcontext
+def reconstruct_sipfiles(recid):
+    """Migrate the versioned-record SIPs."""
+    if recid:
+        reconstruct_sipfiles_t.s(recid).apply(throw=True)
+    else:
+        dt = datetime(2017, 8, 10, 10, 0)
+        rmeta = (
+            db.session.query(PersistentIdentifier)
+            .filter(
+                PersistentIdentifier.status == PIDStatus.REGISTERED,
+                PersistentIdentifier.pid_type == 'recid',
+                PersistentIdentifier.created > dt)
+        )
+
+        print("TOTAL: {0}".format(rmeta.count()))
+        length = rmeta.count()
+        with click.progressbar(rmeta, length=length) as rmeta_bar:
+            for pid in rmeta_bar:
+                reconstruct_sipfiles_t.s(recid=pid.pid_value).apply_async()
+
+
+@migration.command()
+@click.argument('source', type=click.File('r'))
+@with_appcontext
+def load_sipfiles_dump(source):
+    """Load the JSON dump of the SIPFiles."""
+    sipfiles_dump = json.load(source)
+    length = len(sipfiles_dump)
+    with click.progressbar(sipfiles_dump, length=length) as sipfiles_dump_b:
+        for sf in sipfiles_dump_b:
+            file_id, filepath, sip_id, created, _ = sf
+            load_sipfile.s(file_id, filepath, sip_id, created).apply_async()
