@@ -38,8 +38,9 @@ from invenio_pidstore.errors import PIDDoesNotExistError
 from invenio_pidstore.models import PersistentIdentifier
 from invenio_records.api import Record
 from invenio_sipstore.api import SIP as SIPApi
+from invenio_sipstore.api import RecordSIP as RecordSIPApi
 from invenio_sipstore.archivers.bagit_archiver import BagItArchiver
-from invenio_sipstore.models import SIP, RecordSIP, SIPFile, SIPMetadataType
+from invenio_sipstore.models import SIP, RecordSIP, SIPFile
 from invenio_userprofiles.api import UserProfile
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from zenodo.modules.deposit.api import ZenodoDeposit
@@ -499,3 +500,36 @@ def load_sipfile(file_id, filepath, sip_id, created):
             created=dt_created)
         db.session.add(obj)
         db.session.commit()
+
+
+@shared_task
+def create_sip_for_record(recid, agent=None, user_id=432):
+    """Create a new SIP if the record's files diverged from last SIPFiles.
+
+    :param agent: Agent JSON passed to the SIP.
+    :param user_id: ID of the user resposible for the SIP
+                    (by default, user ID of info@zenodo.org)
+    """
+    pid = PersistentIdentifier.get('recid', recid)
+    rec = ZenodoRecord.get_record(pid.object_uuid)
+
+    recsip = RecordSIP.query.filter_by(
+        pid_id=pid.id).order_by(RecordSIP.created.desc()).first()
+
+    rec_f = sorted([f['file_id'] for f in rec.get('_files', [])])
+    sipfiles = recsip.sip.sip_files if recsip else []
+    sipfiles_s = sorted([str(s.file_id) for s in sipfiles])
+
+    default_agent = {
+        "$schema": "https://zenodo.org/schemas/sipstore/"
+                   "agent-webclient-v1.0.0.json",
+        "ip_address": "127.0.0.1",
+        "email": "info@zenodo.org"
+    }
+    agent = agent or default_agent
+
+    if sipfiles_s != rec_f:
+        RecordSIPApi.create(
+            pid, rec, archivable=True, archived=False, create_sip_files=True,
+            agent=agent, user_id=user_id)
+    db.session.commit()
