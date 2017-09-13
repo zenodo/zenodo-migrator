@@ -528,8 +528,8 @@ def create_sip_for_record(recid, agent=None, user_id=432):
     }
     agent = agent or default_agent
 
+    archivable = True
     if sipfiles_s != rec_f:
-        RecordSIPApi.create(
-            pid, rec, archivable=True, archived=False, create_sip_files=True,
-            agent=agent, user_id=user_id)
+        RecordSIPApi.create(pid, rec, archivable, create_sip_files=True,
+                            agent=agent, user_id=user_id)
     db.session.commit()
